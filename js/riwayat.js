@@ -68,52 +68,115 @@ export async function loadRiwayat() {
             const score = calculateOverallScore(data);
             count++;
             
-            // Riwayat page card (Grid layout, sharp stroke)
+            // Riwayat page card (Grid layout, clean professional card with action buttons)
             if (container) {
                 const card = document.createElement('div');
-                card.className = 'bg-white p-4 rounded border border-gray-200 flex justify-between items-center cursor-pointer hover:border-gray-800 transition-all';
+                card.className = 'bg-white p-4 border border-gray-200 hover:border-gray-400 transition-all flex flex-col justify-between';
                 card.innerHTML = `
-                    <div class="min-w-0 pr-3">
-                        <span class="inline-block px-1.5 py-0.5 border border-gray-300 bg-white text-gray-700 text-[10px] font-bold rounded-sm mb-1">${data.tanggal || '-'}</span>
-                        <h4 class="font-bold text-gray-900 text-sm leading-tight truncate">${data.fakultas || 'Tanpa Fakultas'}</h4>
-                        <p class="text-xs text-gray-500 mt-1 truncate"><i class="fa-solid fa-location-dot text-gray-400 mr-1"></i>${data.lokasi || '-'}</p>
-                        <p class="text-xs text-gray-400 mt-0.5 truncate"><i class="fa-solid fa-user-check text-gray-400 mr-1"></i>${data.surveyor || '-'}</p>
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <span class="inline-block px-1.5 py-0.5 border border-gray-300 bg-gray-50 text-gray-700 text-[10px] font-bold">${data.tanggal || '-'}</span>
+                            <div class="text-right shrink-0">
+                                <span class="text-base font-bold ${score >= 80 ? 'text-[#025511]' : (score >= 60 ? 'text-amber-700' : 'text-red-700')}">${score}%</span>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-gray-900 text-sm leading-snug mb-1.5">${data.fakultas || 'Tanpa Fakultas'}</h4>
+                        <p class="text-xs text-gray-600 truncate mb-0.5"><i class="fa-solid fa-location-dot text-gray-400 mr-1.5"></i>${data.lokasi || '-'}</p>
+                        <p class="text-xs text-gray-500 truncate mb-3"><i class="fa-solid fa-users text-gray-400 mr-1.5"></i>${data.surveyor || '-'}</p>
                     </div>
-                    <div class="text-right shrink-0">
-                        <div class="text-xl font-bold ${score >= 80 ? 'text-green-700' : (score >= 60 ? 'text-amber-600' : 'text-red-600')}">${score}%</div>
-                        <span class="text-[9px] uppercase font-bold tracking-wider text-gray-400">Score</span>
+
+                    <div class="pt-2.5 border-t border-gray-100 flex items-center gap-2">
+                        <button type="button" class="btn-open-report btn btn-secondary text-xs py-1.5 px-3 flex-1 justify-center">
+                            <i class="fa-solid fa-pen-to-square text-gray-600"></i>
+                            <span>Buka Laporan</span>
+                        </button>
+                        <button type="button" class="btn-delete-report px-2.5 py-1.5 border border-gray-300 bg-white text-gray-500 hover:text-red-600 hover:border-red-400 transition text-xs" title="Hapus Laporan">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
                     </div>
                 `;
-                card.addEventListener('click', () => {
+
+                // Open report click
+                card.querySelector('.btn-open-report')?.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     state.currentDocId = id;
                     restoreFormFromData(data);
                     showView('form');
                 });
+
+                // Delete report click
+                card.querySelector('.btn-delete-report')?.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const confirmDelete = confirm(`Hapus laporan inspeksi "${data.fakultas || 'ini'}" (${data.tanggal || ''}) secara permanen?`);
+                    if (!confirmDelete) return;
+
+                    showLoadingModal('Menghapus laporan...');
+                    try {
+                        await db.collection('reports').doc(id).delete();
+                        hideLoadingModal();
+                        showToast('Laporan berhasil dihapus', 'success');
+                        loadRiwayat();
+                    } catch (err) {
+                        hideLoadingModal();
+                        console.error('Error deleting report:', err);
+                        showToast('Gagal menghapus: ' + err.message, 'error');
+                    }
+                });
+
                 container.appendChild(card);
             }
 
             // Dashboard list card (Compact list layout, up to 6 items)
             if (dashboardContainer && count <= 6) {
                 const dashCard = document.createElement('div');
-                dashCard.className = 'p-3 rounded border border-gray-200 hover:border-gray-800 bg-white flex items-center justify-between cursor-pointer transition-all';
+                dashCard.className = 'p-3 border border-gray-200 hover:border-gray-400 bg-white flex items-center justify-between transition-all';
                 dashCard.innerHTML = `
-                    <div class="min-w-0 pr-3">
+                    <div class="min-w-0 pr-3 cursor-pointer flex-1">
                         <h4 class="font-bold text-gray-900 text-xs sm:text-sm truncate">${data.fakultas || 'Tanpa Fakultas'}</h4>
                         <p class="text-[11px] text-gray-500 truncate">${data.tanggal || '-'} &bull; ${data.lokasi || '-'}</p>
                     </div>
-                    <div class="text-right shrink-0 flex items-center gap-3">
+                    <div class="shrink-0 flex items-center gap-3">
                         <div class="text-right">
                             <span class="font-bold text-sm ${score >= 80 ? 'text-[#025511]' : (score >= 60 ? 'text-amber-700' : 'text-red-700')}">${score}%</span>
                             <span class="text-[10px] text-gray-400 block -mt-0.5">Kesesuaian</span>
                         </div>
-                        <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                        <button type="button" class="btn-dash-open p-1.5 text-gray-500 hover:text-gray-900" title="Buka">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                        <button type="button" class="btn-dash-delete p-1.5 text-gray-400 hover:text-red-600" title="Hapus">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
                     </div>
                 `;
-                dashCard.addEventListener('click', () => {
+
+                dashCard.querySelector('.cursor-pointer')?.addEventListener('click', () => {
                     state.currentDocId = id;
                     restoreFormFromData(data);
                     showView('form');
                 });
+                dashCard.querySelector('.btn-dash-open')?.addEventListener('click', () => {
+                    state.currentDocId = id;
+                    restoreFormFromData(data);
+                    showView('form');
+                });
+                dashCard.querySelector('.btn-dash-delete')?.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const confirmDelete = confirm(`Hapus laporan inspeksi "${data.fakultas || 'ini'}" (${data.tanggal || ''})?`);
+                    if (!confirmDelete) return;
+
+                    showLoadingModal('Menghapus laporan...');
+                    try {
+                        await db.collection('reports').doc(id).delete();
+                        hideLoadingModal();
+                        showToast('Laporan berhasil dihapus', 'success');
+                        loadRiwayat();
+                    } catch (err) {
+                        hideLoadingModal();
+                        console.error('Error deleting report:', err);
+                        showToast('Gagal menghapus: ' + err.message, 'error');
+                    }
+                });
+
                 dashboardContainer.appendChild(dashCard);
             }
         });
