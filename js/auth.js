@@ -1,13 +1,6 @@
-﻿// js/auth.js — Tasteful PIN Lock System for UNAIR K3
+﻿// js/auth.js — Pure Stealth PIN Lock
 const CORRECT_PIN = '19542026';
 const STORAGE_KEY = 'unair_k3_auth_unlocked';
-
-const ERROR_MESSAGES = [
-    'PIN salah. Pastikan kamu anggota tim inspeksi K3.',
-    'Akses ditolak. Periksa kembali PIN otorisasi tim.',
-    'Belum tepat. Coba ketik kembali dengan teliti.',
-    'PIN tidak cocok. Hubungi koordinator tim jika lupa.'
-];
 
 let currentInput = '';
 let isChecking = false;
@@ -16,7 +9,6 @@ export function initPinLock() {
     const lockScreen = document.getElementById('pin-lock-overlay');
     if (!lockScreen) return;
 
-    // Check if already unlocked in this browser session
     const isUnlocked = sessionStorage.getItem(STORAGE_KEY) === 'true';
     if (isUnlocked) {
         lockScreen.style.display = 'none';
@@ -25,7 +17,7 @@ export function initPinLock() {
         renderDots();
     }
 
-    // Keyboard input listener
+    // Keyboard listener
     window.addEventListener('keydown', (e) => {
         if (lockScreen.style.display === 'none') return;
         
@@ -85,7 +77,6 @@ function handleBackspace() {
     if (currentInput.length > 0) {
         currentInput = currentInput.slice(0, -1);
         renderDots();
-        clearError();
     }
 }
 
@@ -93,7 +84,6 @@ function handleClear() {
     if (isChecking) return;
     currentInput = '';
     renderDots();
-    clearError();
 }
 
 function renderDots() {
@@ -109,49 +99,34 @@ function renderDots() {
 
 function verifyPin() {
     isChecking = true;
-    const msgEl = document.getElementById('pin-status-message');
     const lockCard = document.getElementById('pin-lock-card');
+    const dots = document.querySelectorAll('.pin-dot');
 
     if (currentInput === CORRECT_PIN) {
-        // Success
-        if (msgEl) {
-            msgEl.className = 'text-xs font-semibold text-[#025511] mt-3 h-5 transition-all';
-            msgEl.innerHTML = '<i class="fa-solid fa-circle-check mr-1 text-[#025511]"></i> Akses diterima. Membuka sistem...';
-        }
-        
         sessionStorage.setItem(STORAGE_KEY, 'true');
 
         setTimeout(() => {
             const lockScreen = document.getElementById('pin-lock-overlay');
             if (lockScreen) {
                 lockScreen.style.opacity = '0';
-                lockScreen.style.transition = 'opacity 0.3s ease';
+                lockScreen.style.transition = 'opacity 0.25s ease';
                 setTimeout(() => {
                     lockScreen.style.display = 'none';
                     lockScreen.style.opacity = '1';
                     currentInput = '';
                     renderDots();
                     isChecking = false;
-                }, 300);
+                }, 250);
             }
-        }, 450);
+        }, 300);
 
     } else {
-        // Error
         if (lockCard) {
             lockCard.classList.remove('pin-shake');
-            void lockCard.offsetWidth; // trigger reflow
+            void lockCard.offsetWidth;
             lockCard.classList.add('pin-shake');
         }
 
-        const randomMsg = ERROR_MESSAGES[Math.floor(Math.random() * ERROR_MESSAGES.length)];
-        if (msgEl) {
-            msgEl.className = 'text-xs font-semibold text-red-600 mt-3 h-5 transition-all';
-            msgEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ${randomMsg}`;
-        }
-
-        // Highlight dots in red briefly
-        const dots = document.querySelectorAll('.pin-dot');
         dots.forEach(d => d.classList.add('error'));
 
         setTimeout(() => {
@@ -159,15 +134,7 @@ function verifyPin() {
             currentInput = '';
             renderDots();
             isChecking = false;
-        }, 700);
-    }
-}
-
-function clearError() {
-    const msgEl = document.getElementById('pin-status-message');
-    if (msgEl) {
-        msgEl.className = 'text-xs text-gray-500 mt-3 h-5';
-        msgEl.textContent = 'Ketik PIN 8-digit atau gunakan tombol di bawah';
+        }, 550);
     }
 }
 
@@ -175,7 +142,6 @@ export function lockApp() {
     sessionStorage.removeItem(STORAGE_KEY);
     currentInput = '';
     renderDots();
-    clearError();
     const lockScreen = document.getElementById('pin-lock-overlay');
     if (lockScreen) {
         lockScreen.style.display = 'flex';

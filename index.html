@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -569,19 +569,12 @@
     </div>
   </div>
 
-    <!-- OVERLAY: PIN Security Lock -->
-  <div id="pin-lock-overlay" class="fixed inset-0 z-[99999] bg-gray-900/90 flex items-center justify-center p-4">
-    <div id="pin-lock-card" class="bg-white border border-gray-300 w-full max-w-xs sm:max-w-sm p-6 sm:p-7 text-center shadow-2xl">
-      <!-- Shield / K3 Icon -->
-      <div class="inline-flex items-center justify-center w-14 h-14 bg-gray-50 border border-gray-200 text-[#025511] text-2xl mb-4">
-        <i class="fa-solid fa-shield-halved"></i>
-      </div>
+  <!-- OVERLAY: Pure Stealth PIN Lock (No Text) -->
+  <div id="pin-lock-overlay" class="fixed inset-0 z-[99999] bg-gray-900/95 flex items-center justify-center p-4">
+    <div id="pin-lock-card" class="bg-white border border-gray-300 w-full max-w-[290px] p-6 text-center shadow-2xl">
       
-      <h2 class="text-lg font-bold text-gray-900 leading-tight">Otorisasi Tim K3 UNAIR</h2>
-      <p class="text-xs text-gray-500 mt-1">Masukkan PIN otorisasi surveyor untuk membuka dashboard inspeksi</p>
-
       <!-- 8 PIN Indicator Dots -->
-      <div class="flex justify-center items-center gap-2 my-5">
+      <div class="flex justify-center items-center gap-2 mb-5">
         <div class="pin-dot"></div>
         <div class="pin-dot"></div>
         <div class="pin-dot"></div>
@@ -591,11 +584,6 @@
         <div class="pin-dot"></div>
         <div class="pin-dot"></div>
       </div>
-
-      <!-- Feedback / Status Text -->
-      <p id="pin-status-message" class="text-xs text-gray-500 mb-4 h-5 transition-all">
-        Ketik PIN pada keyboard atau gunakan tombol
-      </p>
 
       <!-- On-Screen Clean Sharp Keypad -->
       <div id="pin-numpad" class="grid grid-cols-3 gap-2">
@@ -608,17 +596,13 @@
         <button type="button" data-key="7" class="pin-key-btn">7</button>
         <button type="button" data-key="8" class="pin-key-btn">8</button>
         <button type="button" data-key="9" class="pin-key-btn">9</button>
-        <button type="button" data-key="clear" class="pin-key-btn text-xs text-gray-500 hover:text-red-600 font-bold uppercase tracking-wider">C</button>
+        <button type="button" data-key="clear" class="pin-key-btn text-xs text-gray-400 hover:text-red-600 font-bold uppercase">C</button>
         <button type="button" data-key="0" class="pin-key-btn">0</button>
-        <button type="button" data-key="backspace" class="pin-key-btn text-sm text-gray-700 hover:text-red-600">
+        <button type="button" data-key="backspace" class="pin-key-btn text-sm text-gray-500 hover:text-red-600">
           <i class="fa-solid fa-delete-left"></i>
         </button>
       </div>
 
-      <div class="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
-        <span>Universitas Airlangga</span>
-        <span>K3 Proteksi Kebakaran</span>
-      </div>
     </div>
   </div>
 
