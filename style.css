@@ -1,0 +1,509 @@
+/* CSS Variables */
+:root {
+  --primary: #025511;
+  --primary-dark: #01400d;
+  --primary-hover: #013b0c;
+  --primary-light: #f0fdf4;
+  --primary-100: #dcfce7;
+  --danger: #dc2626;
+  --warning: #f59e0b;
+}
+
+/* Base Styles */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #f8fafc; /* slate-50 */
+  color: #1e293b; /* slate-800 */
+}
+
+/* STRICT ZERO BORDER-RADIUS — Clean, Crisp, Square Edges on ALL Elements */
+*,
+*::before,
+*::after,
+button,
+.btn,
+input,
+select,
+textarea,
+.step-indicator,
+.step-icon-box,
+.unit-card,
+.dashboard-card,
+.nav-item,
+.modal,
+.card,
+.toast,
+.score-badge,
+[class*="rounded"] {
+  border-radius: 0 !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Sidebar & Navigation Styles */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  color: #475569;
+  font-size: 0.875rem;
+}
+.nav-item:hover {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+@media (min-width: 1024px) {
+  .nav-item.active {
+    background-color: #f8fafc;
+    color: #025511;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    border-left: 3px solid #025511;
+  }
+}
+@media (max-width: 1023px) {
+  .nav-item.active {
+    color: #025511;
+    border-top: 2px solid #025511;
+  }
+}
+
+/* Professional Stroke-Based Button Styles — Strict Sharp Rectangles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #334155;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.btn:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+.btn:active {
+  background-color: #f1f5f9;
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background-color: #025511 !important;
+  border-color: #025511 !important;
+  color: #ffffff !important;
+}
+.btn-primary:hover {
+  background-color: #013b0c !important;
+  border-color: #01300a !important;
+  color: #ffffff !important;
+}
+
+.btn-stroke-dark {
+  background-color: #ffffff;
+  border: 1px solid #334155;
+  color: #0f172a;
+}
+.btn-stroke-dark:hover {
+  background-color: #0f172a;
+  color: #ffffff;
+}
+
+.btn-stroke-green {
+  background-color: #ffffff;
+  border: 1px solid #025511;
+  color: #025511;
+}
+.btn-stroke-green:hover {
+  background-color: #025511;
+  color: #ffffff;
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+}
+.btn-secondary:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+
+.btn-danger {
+  background-color: #ffffff;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+}
+.btn-danger:hover {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}
+
+/* Clean Step Indicator Tabs — Pure Stroke, Direct Icon (No Icon Box) */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.step-indicator .step-icon {
+  color: #94a3b8;
+  font-size: 1.125rem;
+  transition: color 0.15s ease;
+}
+
+.step-indicator:hover {
+  border-color: #94a3b8;
+  background-color: #f8fafc;
+}
+
+.step-indicator:hover .step-icon {
+  color: #0f172a;
+}
+
+.step-indicator.active {
+  background-color: #ffffff !important;
+  border: 1px solid #025511 !important;
+  border-top: 3px solid #025511 !important;
+  color: #0f172a !important;
+}
+
+.step-indicator.active .step-icon {
+  color: #025511 !important;
+}
+
+.step-indicator.active .step-title {
+  color: #025511 !important;
+  font-weight: 700;
+}
+
+
+/* Form Step Transitions */
+.form-step {
+  display: none;
+}
+.form-step.active {
+  display: block;
+}
+
+/* Unit Cards */
+.unit-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.unit-card .unit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 1rem;
+}
+
+/* Checklist Table Elements */
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.checklist-table th {
+  text-align: left;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+.checklist-table td {
+  padding: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+  font-size: 0.875rem;
+}
+.checklist-table tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+/* Form Controls Customization */
+.radio-group {
+  display: flex;
+  gap: 1rem;
+}
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+}
+.radio-group input[type="radio"] {
+  accent-color: #025511;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+.keterangan-input {
+  width: 100%;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem;
+  outline: none;
+}
+.keterangan-input:focus {
+  border-color: #025511;
+  box-shadow: 0 0 0 1px #025511;
+}
+.foto-input {
+  display: block;
+  width: 100%;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+.foto-input::file-selector-button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.foto-input::file-selector-button:hover {
+  background-color: #f3f4f6;
+}
+.foto-preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.foto-preview-container img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+}
+
+/* Score Badge — Clean Stroke */
+.score-badge {
+  display: inline-flex;
+  padding: 0.25rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+}
+.score-badge.green { border-color: #025511; color: #025511; }
+.score-badge.yellow { border-color: #f59e0b; color: #b45309; }
+.score-badge.red { border-color: #dc2626; color: #b91c1c; }
+
+/* Dashboard Cards */
+.dashboard-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.dashboard-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Rich Text WYSIWYG Editor Styles */
+.recommendation-editor-box {
+  margin-top: 1.5rem;
+}
+.rich-editor-canvas {
+  outline: none;
+  line-height: 1.6;
+}
+.rich-editor-canvas[placeholder]:empty:before {
+  content: attr(placeholder);
+  color: #9ca3af;
+  font-style: italic;
+}
+.rich-editor-canvas h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.rich-editor-canvas h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.rich-editor-canvas blockquote {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  color: #475569;
+  font-style: italic;
+}
+.rich-editor-canvas ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+.rich-editor-canvas ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.editor-inserted-img {
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.editor-inserted-img:hover {
+  outline: 2px solid #025511;
+}
+
+.recommendation-print-body img {
+  margin-bottom: 6px;
+}
+
+/* Modals — loading spinner */
+#modal-loading:not(.hidden) {
+  display: flex !important;
+}
+
+/* Toasts */
+.toast {
+  position: relative;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  background-color: white;
+  min-width: 250px;
+  border: 1px solid #cbd5e1;
+}
+.toast.fadeOut {
+  animation: fadeOutRight 0.4s ease forwards;
+}
+.toast-success { border-left: 4px solid #025511; }
+.toast-error { border-left: 4px solid var(--danger); }
+.toast-warning { border-left: 4px solid var(--warning); }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+/* Print Styles — managed by preview.js via #print-container injection */
+@media print {
+  /* preview.js injects @media print rules for #print-container dynamically */
+}
+
+/* PIN Lock Screen Styles */
+#pin-lock-overlay {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.pin-dot {
+  width: 13px;
+  height: 13px;
+  border: 2px solid #cbd5e1;
+  background-color: #ffffff;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pin-dot.active {
+  background-color: #025511;
+  border-color: #025511;
+  transform: scale(1.15);
+}
+
+.pin-dot.error {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  transform: scale(1.15);
+}
+
+.pin-key-btn {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  font-size: 1.125rem;
+  font-weight: 700;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+  user-select: none;
+  cursor: pointer;
+}
+
+.pin-key-btn:hover {
+  background-color: #f8fafc;
+  border-color: #025511;
+  color: #025511;
+}
+
+.pin-key-btn:active {
+  background-color: #e2e8f0;
+  transform: scale(0.96);
+}
+
+@keyframes pinShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-7px); }
+  40%, 80% { transform: translateX(7px); }
+}
+
+.pin-shake {
+  animation: pinShake 0.4s ease-in-out;
+}
+

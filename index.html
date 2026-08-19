@@ -1,0 +1,638 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inspeksi K3 Proteksi Kebakaran — Universitas Airlangga</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Tailwind CSS CDN (Play CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          colors: {
+            primary: {
+              DEFAULT: '#025511',
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#025511',
+              600: '#025511',
+              700: '#01400d',
+              800: '#01300a',
+              900: '#002006'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css?v=16">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
+
+  <!-- Sidebar (Desktop) -->
+  <aside id="sidebar" class="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 w-[260px] bg-white shadow-lg z-40">
+    <div class="p-6 flex items-center gap-4 border-b border-gray-100">
+      <img src="assets/logo.png" alt="Logo" class="w-12 h-12 object-contain rounded" onerror="this.src='https://via.placeholder.com/48/16a34a/ffffff?text=K3'">
+      <h1 class="font-bold text-lg leading-tight text-gray-900">Inspeksi K3<br><span class="text-xs font-normal text-gray-500">Proteksi Kebakaran</span></h1>
+    </div>
+    <nav class="flex-1 p-4 flex flex-col gap-2">
+      <div class="nav-item active" data-view="dashboard">
+        <i class="fa-solid fa-home w-5 text-center"></i>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" data-view="form">
+        <i class="fa-solid fa-plus-circle w-5 text-center"></i>
+        <span>Inspeksi Baru</span>
+      </div>
+      <div class="nav-item" data-view="riwayat">
+        <i class="fa-solid fa-clipboard-list w-5 text-center"></i>
+        <span>Riwayat</span>
+      </div>
+    </nav>
+    <div class="p-4 border-t border-gray-100">
+      <button type="button" id="btn-lock-app" class="btn btn-secondary w-full justify-center text-xs py-2 text-gray-600 hover:text-red-700 border-gray-200">
+        <i class="fa-solid fa-lock text-gray-500"></i>
+        <span>Kunci Sesi</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Mobile Top Bar -->
+  <header id="mobile-header" class="flex lg:hidden sticky top-0 bg-white shadow-sm z-30 px-4 py-3 items-center justify-between">
+    <div class="flex items-center gap-3">
+      <img src="assets/logo.png" alt="Logo" class="w-8 h-8 object-contain rounded" onerror="this.src='https://via.placeholder.com/32/16a34a/ffffff?text=K3'">
+      <h1 class="font-bold text-base text-gray-900">Inspeksi K3</h1>
+    </div>
+    <button type="button" id="btn-lock-app-mobile" class="text-gray-500 hover:text-gray-900 px-2 py-1 border border-gray-200 text-xs flex items-center gap-1.5" title="Kunci Sesi">
+      <i class="fa-solid fa-lock text-[10px]"></i>
+      <span>Kunci</span>
+    </button>
+  </header>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav id="mobile-nav" class="flex lg:hidden fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-40 px-2 pb-safe">
+    <div class="flex w-full justify-around">
+      <div class="nav-item flex-1 flex flex-col items-center justify-center py-3 active" data-view="dashboard">
+        <i class="fa-solid fa-home text-xl mb-1"></i>
+        <span class="text-[10px] font-medium">Dashboard</span>
+      </div>
+      <div class="nav-item flex-1 flex flex-col items-center justify-center py-3" data-view="form">
+        <i class="fa-solid fa-plus-circle text-xl mb-1"></i>
+        <span class="text-[10px] font-medium">Inspeksi Baru</span>
+      </div>
+      <div class="nav-item flex-1 flex flex-col items-center justify-center py-3" data-view="riwayat">
+        <i class="fa-solid fa-clipboard-list text-xl mb-1"></i>
+        <span class="text-[10px] font-medium">Riwayat</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main id="main-content" class="lg:ml-[260px] p-4 lg:p-8 pb-24 lg:pb-8 min-h-screen">
+
+    <!-- VIEW: Dashboard -->
+    <div id="view-dashboard" class="view-container">
+      <header class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl lg:text-3xl font-bold text-gray-900">Inspeksi K3 Proteksi Kebakaran</h2>
+          <p class="text-gray-500 mt-1">Universitas Airlangga</p>
+        </div>
+        <button id="btn-new-inspection-header" class="btn btn-primary shadow-sm hover:bg-[#013b0c] transition py-2.5 px-5 flex items-center gap-2">
+          <i class="fa-solid fa-plus-circle"></i>
+          <span>Mulai Inspeksi Baru</span>
+        </button>
+      </header>
+
+      <!-- Dashboard Quick Banner & History -->
+      <div class="grid grid-cols-1 gap-6 mb-6">
+        <!-- New Inspection Action Card (Clean Stroke Design) -->
+        <div class="dashboard-card bg-white border border-gray-300 p-6 rounded transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="max-w-xl">
+            <span class="inline-block px-2 py-0.5 border border-[#025511] bg-white text-[#025511] text-[11px] font-bold uppercase tracking-wider mb-2 rounded-sm">Form Lapangan</span>
+            <h3 class="font-bold text-xl text-gray-900 mb-1">Mulai Laporan Inspeksi Baru</h3>
+            <p class="text-gray-600 text-sm leading-relaxed">Catat checklist kondisi APAR, Fire Alarm, Jalur Evakuasi, Pintu Darurat, dan Tangga Darurat secara langsung dan fleksibel.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button type="button" id="btn-import-backup-banner" class="btn btn-secondary py-2 px-4">
+              <i class="fa-solid fa-file-import text-gray-700"></i>
+              <span>Import Backup (.inspeksi)</span>
+            </button>
+            <button type="button" id="btn-new-inspection" class="btn btn-primary py-2 px-4">
+              <i class="fa-solid fa-plus-circle"></i>
+              <span>Buka Form Inspeksi</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Recent History Section -->
+      <div class="bg-white rounded border border-gray-200 p-5 sm:p-6 mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-gray-200 gap-3">
+          <div>
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-gray-700"></i>
+              Riwayat Inspeksi Terbaru
+            </h3>
+            <p class="text-xs text-gray-500 mt-0.5">Daftar laporan inspeksi yang telah tersimpan di server</p>
+          </div>
+          <button id="btn-dashboard-to-riwayat" class="btn btn-secondary text-xs py-1.5 px-3">
+            <span>Lihat Semua & Rekap</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </div>
+        
+        <div id="dashboard-riwayat-list" class="space-y-2">
+          <div class="text-center py-8 text-gray-400">
+            <i class="fas fa-spinner fa-spin text-xl mb-2"></i>
+            <p class="text-xs">Memuat riwayat...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: Form Inspeksi -->
+    <div id="view-form" class="view-container" style="display:none">
+      <!-- Section Navigation Pills (Clean Stroke Design) -->
+      <div class="mb-5">
+        <div class="flex items-center justify-between mb-2.5 px-1">
+          <div class="flex items-center gap-2">
+            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Bagian Inspeksi:</h3>
+            <span class="text-xs text-gray-500 hidden sm:inline">&bull; Klik tombol di bawah untuk langsung menuju bagian</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btn-autofill-test" class="btn btn-secondary text-xs py-1 px-2.5 bg-white hover:bg-gray-50 border-gray-300 text-gray-800 font-bold" title="Otomatis isi semua data form untuk keperluan uji coba & test preview">
+              <i class="fa-solid fa-wand-magic-sparkles text-amber-600"></i>
+              <span>Isi Otomatis (Test)</span>
+            </button>
+            <button type="button" id="btn-quick-download-pdf" class="btn btn-secondary text-xs py-1 px-2.5">
+              <i class="fa-solid fa-file-pdf text-red-600"></i>
+              <span>Download PDF</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2" id="step-indicators">
+          <!-- Step Pill 1 -->
+          <button type="button" class="step-indicator active group flex items-center gap-2 p-2 border text-left transition-all cursor-pointer" data-step="data-umum">
+            <i class="fa-solid fa-building text-sm shrink-0 step-icon"></i>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold leading-tight truncate step-title">Data Umum</div>
+              <div class="text-[9px] text-gray-400 truncate">Lokasi & Tim</div>
+            </div>
+          </button>
+
+          <!-- Step Pill 2 -->
+          <button type="button" class="step-indicator group flex items-center gap-2 p-2 border text-left transition-all cursor-pointer" data-step="apar">
+            <i class="fa-solid fa-fire-extinguisher text-sm shrink-0 step-icon"></i>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold leading-tight truncate step-title">APAR</div>
+              <div class="text-[9px] text-gray-400 truncate">Proteksi Aktif</div>
+            </div>
+          </button>
+
+          <!-- Step Pill 3 -->
+          <button type="button" class="step-indicator group flex items-center gap-2 p-2 border text-left transition-all cursor-pointer" data-step="fire-alarm">
+            <i class="fa-solid fa-bell text-sm shrink-0 step-icon"></i>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold leading-tight truncate step-title">Fire Alarm</div>
+              <div class="text-[9px] text-gray-400 truncate">Panel & Bell</div>
+            </div>
+          </button>
+
+          <!-- Step Pill 4 -->
+          <button type="button" class="step-indicator group flex items-center gap-2 p-2 border text-left transition-all cursor-pointer" data-step="jalur-evakuasi">
+            <i class="fa-solid fa-person-walking-arrow-right text-sm shrink-0 step-icon"></i>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold leading-tight truncate step-title">Evakuasi</div>
+              <div class="text-[9px] text-gray-400 truncate">Jalur & Sign</div>
+            </div>
+          </button>
+
+          <!-- Step Pill 5 -->
+          <button type="button" class="step-indicator group flex items-center gap-2 p-2 border text-left transition-all cursor-pointer" data-step="pintu-darurat">
+            <i class="fa-solid fa-door-open text-sm shrink-0 step-icon"></i>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold leading-tight truncate step-title">Pintu Darurat</div>
+              <div class="text-[9px] text-gray-400 truncate">Akses & Handle</div>
+            </div>
+          </button>
+
+          <!-- Step Pill 6 -->
+          <button type="button" class="step-indicator group flex items-center gap-2 p-2 border text-left transition-all cursor-pointer" data-step="tangga-darurat">
+            <i class="fa-solid fa-stairs text-sm shrink-0 step-icon"></i>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold leading-tight truncate step-title">Tangga Darurat</div>
+              <div class="text-[9px] text-gray-400 truncate">Handrail & Lampu</div>
+            </div>
+          </button>
+
+          <!-- Step Pill 7: Rekomendasi Pasif (Dedicated Step for All Passive Protections) -->
+          <button type="button" class="step-indicator group flex items-center gap-2 p-2 border text-left transition-all cursor-pointer" data-step="rekomendasi-pasif">
+            <i class="fa-solid fa-pen-to-square text-sm shrink-0 step-icon"></i>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold leading-tight truncate step-title">Rekom. Pasif</div>
+              <div class="text-[9px] text-gray-400 truncate">Proteksi Pasif</div>
+            </div>
+          </button>
+
+          <!-- Step Pill 8 -->
+          <button type="button" class="step-indicator group flex items-center gap-2 p-2 border text-left transition-all cursor-pointer" data-step="review">
+            <i class="fa-solid fa-clipboard-check text-sm shrink-0 step-icon"></i>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold leading-tight truncate step-title">Review</div>
+              <div class="text-[9px] text-gray-400 truncate">Simpan & PDF</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Form Container -->
+      <div class="bg-white rounded border border-gray-200 p-5 lg:p-8 max-w-4xl mx-auto">
+        
+        <!-- Step 1: Data Umum -->
+        <div class="form-step active" data-step="data-umum">
+          <h3 class="text-lg font-bold text-gray-900 mb-5 pb-2 border-b border-gray-200">Data Umum Inspeksi</h3>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5" for="input-tanggal">Tanggal Inspeksi</label>
+              <input type="date" id="input-tanggal" class="w-full px-3.5 py-2 border border-gray-300 focus:border-[#025511] focus:outline-none text-sm bg-white">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5" for="select-fakultas">Fakultas / Unit</label>
+              <select id="select-fakultas" class="w-full px-3.5 py-2 border border-gray-300 focus:border-[#025511] focus:outline-none text-sm bg-white">
+                <option value="">-- Pilih Fakultas/Unit --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5" for="input-lokasi">Lokasi / Area / Gedung</label>
+              <input type="text" id="input-lokasi" placeholder="Contoh: Gedung A Lantai 2" class="w-full px-3.5 py-2 border border-gray-300 focus:border-[#025511] focus:outline-none text-sm bg-white">
+            </div>
+          </div>
+
+          <!-- Multi-Surveyor Selector Section -->
+          <div class="border border-gray-200 p-4 bg-white">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5 pb-2 border-b border-gray-100">
+              <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider">
+                <i class="fa-solid fa-users text-[#025511] mr-1.5"></i>
+                Surveyor / Tim Pemeriksa <span class="text-gray-500 font-normal lowercase">(Bisa pilih lebih dari satu)</span>
+              </label>
+              <span id="surveyor-selected-count" class="text-xs font-bold text-[#025511]">0 surveyor dipilih</span>
+            </div>
+            
+            <div id="surveyor-checkboxes-container" class="max-h-52 overflow-y-auto pr-1">
+              <!-- Populated dynamically by ui.js -->
+            </div>
+
+            <!-- Add Custom / Unlisted Surveyor -->
+            <div class="mt-3 pt-3 border-t border-gray-100 flex flex-col sm:flex-row gap-2">
+              <input type="text" id="input-custom-surveyor" placeholder="+ Tambah nama surveyor lainnya jika belum terdaftar..." class="flex-1 px-3 py-1.5 border border-gray-300 text-xs focus:border-[#025511] focus:outline-none">
+              <button type="button" id="btn-add-custom-surveyor" class="btn btn-secondary text-xs py-1.5 px-3 shrink-0">
+                <i class="fa-solid fa-plus"></i> Tambah Nama
+              </button>
+            </div>
+          </div>
+          <!-- Section Save Button -->
+          <div class="mt-5 pt-4 border-t border-gray-100 flex justify-end">
+            <button type="button" class="btn-save-section btn btn-secondary py-2 px-5 text-sm">
+              <i class="fa-solid fa-floppy-disk text-gray-600"></i>
+              <span>Simpan Draf</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: APAR (Proteksi Aktif) -->
+        <div class="form-step hidden" data-step="apar">
+          <div class="flex items-center justify-between mb-5 border-b border-gray-200 pb-2">
+            <h3 class="text-lg font-bold text-gray-900">Inspeksi APAR (Proteksi Aktif)</h3>
+          </div>
+          <div id="apar-units-container" class="space-y-4 mb-4">
+            <!-- Dynamically populated by JS -->
+          </div>
+          <button type="button" id="btn-add-apar" class="btn btn-secondary w-full justify-center border-dashed py-3">
+            <i class="fa-solid fa-plus"></i> Tambah APAR
+          </button>
+          <!-- Recommendation Editor Section for APAR (Proteksi Aktif) -->
+          <div id="recommendation-editor-apar-container"></div>
+          <!-- Section Save Button -->
+          <div class="mt-5 pt-4 border-t border-gray-100 flex justify-end">
+            <button type="button" class="btn-save-section btn btn-secondary py-2 px-5 text-sm">
+              <i class="fa-solid fa-floppy-disk text-gray-600"></i>
+              <span>Simpan Draf</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Fire Alarm -->
+        <div class="form-step hidden" data-step="fire-alarm">
+          <div class="flex items-center justify-between mb-5 border-b border-gray-200 pb-2">
+            <h3 class="text-lg font-bold text-gray-900">Inspeksi Fire Alarm</h3>
+          </div>
+          <div id="fire-alarm-units-container" class="space-y-4 mb-4">
+            <!-- Dynamically populated by JS -->
+          </div>
+          <button type="button" id="btn-add-fire-alarm" class="btn btn-secondary w-full justify-center border-dashed py-3">
+            <i class="fa-solid fa-plus"></i> Tambah Unit Fire Alarm
+          </button>
+          <!-- Section Save Button -->
+          <div class="mt-5 pt-4 border-t border-gray-100 flex justify-end">
+            <button type="button" class="btn-save-section btn btn-secondary py-2 px-5 text-sm">
+              <i class="fa-solid fa-floppy-disk text-gray-600"></i>
+              <span>Simpan Draf</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 4: Jalur Evakuasi -->
+        <div class="form-step hidden" data-step="jalur-evakuasi">
+          <div class="flex items-center justify-between mb-5 border-b border-gray-200 pb-2">
+            <h3 class="text-lg font-bold text-gray-900">Inspeksi Jalur Evakuasi</h3>
+          </div>
+          <div id="jalur-evakuasi-units-container" class="space-y-4 mb-4">
+            <!-- Dynamically populated by JS -->
+          </div>
+          <button type="button" id="btn-add-jalur-evakuasi" class="btn btn-secondary w-full justify-center border-dashed py-3">
+            <i class="fa-solid fa-plus"></i> Tambah Jalur Evakuasi
+          </button>
+          <!-- Section Save Button -->
+          <div class="mt-5 pt-4 border-t border-gray-100 flex justify-end">
+            <button type="button" class="btn-save-section btn btn-secondary py-2 px-5 text-sm">
+              <i class="fa-solid fa-floppy-disk text-gray-600"></i>
+              <span>Simpan Draf</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 5: Pintu Darurat -->
+        <div class="form-step hidden" data-step="pintu-darurat">
+          <div class="flex items-center justify-between mb-5 border-b border-gray-200 pb-2">
+            <h3 class="text-lg font-bold text-gray-900">Inspeksi Pintu Darurat</h3>
+          </div>
+          <div id="pintu-darurat-units-container" class="space-y-4 mb-4">
+            <!-- Dynamically populated by JS -->
+          </div>
+          <button type="button" id="btn-add-pintu-darurat" class="btn btn-secondary w-full justify-center border-dashed py-3">
+            <i class="fa-solid fa-plus"></i> Tambah Pintu Darurat
+          </button>
+          <!-- Section Save Button -->
+          <div class="mt-5 pt-4 border-t border-gray-100 flex justify-end">
+            <button type="button" class="btn-save-section btn btn-secondary py-2 px-5 text-sm">
+              <i class="fa-solid fa-floppy-disk text-gray-600"></i>
+              <span>Simpan Draf</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 6: Tangga Darurat -->
+        <div class="form-step hidden" data-step="tangga-darurat">
+          <div class="flex items-center justify-between mb-5 border-b border-gray-200 pb-2">
+            <h3 class="text-lg font-bold text-gray-900">Inspeksi Tangga Darurat</h3>
+          </div>
+          <div id="tangga-darurat-units-container" class="space-y-4 mb-4">
+            <!-- Dynamically populated by JS -->
+          </div>
+          <button type="button" id="btn-add-tangga-darurat" class="btn btn-secondary w-full justify-center border-dashed py-3">
+            <i class="fa-solid fa-plus"></i> Tambah Tangga Darurat
+          </button>
+          <!-- Section Save Button -->
+          <div class="mt-5 pt-4 border-t border-gray-100 flex justify-end">
+            <button type="button" class="btn-save-section btn btn-secondary py-2 px-5 text-sm">
+              <i class="fa-solid fa-floppy-disk text-gray-600"></i>
+              <span>Simpan Draf</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 7: Rekomendasi Proteksi Pasif (Dedicated Step for All Passive Protections) -->
+        <div class="form-step hidden" data-step="rekomendasi-pasif">
+          <div class="flex items-center justify-between mb-5 border-b border-gray-200 pb-2">
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Rekomendasi Proteksi Pasif</h3>
+              <p class="text-xs text-gray-500 mt-0.5">Mencakup Fire Alarm, Jalur Evakuasi, Pintu Darurat, dan Tangga Darurat</p>
+            </div>
+          </div>
+          <!-- Unified Recommendation Editor Section for Proteksi Pasif -->
+          <div id="recommendation-editor-pasif-container"></div>
+          <!-- Section Save Button -->
+          <div class="mt-5 pt-4 border-t border-gray-100 flex justify-end">
+            <button type="button" class="btn-save-section btn btn-secondary py-2 px-5 text-sm">
+              <i class="fa-solid fa-floppy-disk text-gray-600"></i>
+              <span>Simpan Draf</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 8: Review & Simpan -->
+        <div class="form-step hidden" data-step="review">
+          <h3 class="text-lg font-bold text-gray-900 mb-5 border-b border-gray-200 pb-2">Review & Simpan</h3>
+          
+          <div id="review-summary" class="bg-gray-50 border border-gray-200 rounded p-4 mb-6 text-sm text-gray-700">
+            <!-- JS populates summary here -->
+            <p class="text-center text-gray-500 italic">Memuat ringkasan data...</p>
+          </div>
+
+          <!-- Professional 4 Main Action Buttons -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 mb-4">
+            <button type="button" id="btn-simpan-draf" class="btn btn-secondary py-2.5">
+              <i class="fa-solid fa-floppy-disk text-gray-600"></i>
+              <span>Simpan Draf</span>
+            </button>
+            <button type="button" id="btn-simpan-final" class="btn btn-primary font-semibold py-2.5">
+              <i class="fa-solid fa-check"></i>
+              <span>Simpan Final</span>
+            </button>
+            <button type="button" id="btn-preview" class="btn btn-secondary py-2.5">
+              <i class="fa-solid fa-eye text-gray-600"></i>
+              <span>Preview Laporan</span>
+            </button>
+            <button type="button" id="btn-direct-download-pdf" class="btn btn-secondary font-semibold text-gray-800 py-2.5">
+              <i class="fa-solid fa-file-pdf text-red-600"></i>
+              <span>Download PDF</span>
+            </button>
+          </div>
+
+          <!-- Full-Width Backup Export Option with Asterisk / Disclaimer -->
+          <div class="pt-2 border-t border-gray-100 flex flex-col items-center">
+            <button type="button" id="btn-backup-export" class="btn btn-secondary w-full justify-center py-2 text-xs text-gray-600 hover:text-gray-900 border-dashed border-gray-300">
+              <i class="fa-solid fa-download text-gray-500"></i>
+              <span>Export File Cadangan Offline (.inspeksi)</span>
+            </button>
+            <p class="text-[11px] text-gray-400 mt-1.5 text-center leading-relaxed">
+              * Jika terjadi kendala jaringan atau server saat menyimpan, unduh data cadangan ini agar hasil inspeksi Anda tetap aman tersimpan di perangkat.
+            </p>
+            <input type="file" id="backup-file-input" accept=".inspeksi" class="hidden">
+          </div>
+        </div>
+
+        <!-- Form Navigation Footer -->
+        <div class="mt-8 flex justify-between items-center pt-5 border-t border-gray-200">
+          <button type="button" id="btn-prev-step" class="btn btn-secondary hidden">
+            <i class="fa-solid fa-arrow-left"></i> Sebelumnya
+          </button>
+          <div class="flex-1"></div>
+          <button type="button" id="btn-next-step" class="btn btn-primary">
+            Selanjutnya <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: Riwayat -->
+    <div id="view-riwayat" class="view-container" style="display:none">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-4">
+        <div>
+          <h2 class="text-xl lg:text-2xl font-bold text-gray-900">Riwayat Inspeksi</h2>
+          <p class="text-gray-500 text-xs mt-0.5">Laporan tersimpan dari inspeksi sebelumnya</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <select id="filter-fakultas" class="px-3 py-1.5 bg-white border border-gray-300 rounded text-xs focus:border-[#025511] outline-none">
+            <option value="">Semua Fakultas</option>
+            <option value="Fakultas Kedokteran">Fakultas Kedokteran</option>
+            <option value="Fakultas Kedokteran Gigi">Fakultas Kedokteran Gigi</option>
+            <option value="Fakultas Farmasi">Fakultas Farmasi</option>
+            <option value="Fakultas Keperawatan">Fakultas Keperawatan</option>
+            <option value="Fakultas Kesehatan Masyarakat">Fakultas Kesehatan Masyarakat</option>
+            <option value="Fakultas Hukum">Fakultas Hukum</option>
+            <option value="Fakultas Ekonomi dan Bisnis">Fakultas Ekonomi dan Bisnis</option>
+            <option value="Fakultas Ilmu Sosial dan Ilmu Politik">Fakultas Ilmu Sosial dan Ilmu Politik</option>
+            <option value="Fakultas Psikologi">Fakultas Psikologi</option>
+            <option value="Fakultas Ilmu Budaya">Fakultas Ilmu Budaya</option>
+            <option value="Fakultas Sains dan Teknologi">Fakultas Sains dan Teknologi</option>
+            <option value="Fakultas Perikanan dan Kelautan">Fakultas Perikanan dan Kelautan</option>
+            <option value="Fakultas Vokasi">Fakultas Vokasi</option>
+            <option value="Fakultas Teknologi Maju dan Multidisiplin">Fakultas Teknologi Maju dan Multidisiplin</option>
+            <option value="Fakultas Kedokteran Hewan">Fakultas Kedokteran Hewan</option>
+            <option value="Sekolah Pascasarjana">Sekolah Pascasarjana</option>
+            <option value="Rektorat / Kantor Pusat">Rektorat / Kantor Pusat</option>
+            <option value="Perpustakaan Pusat">Perpustakaan Pusat</option>
+            <option value="Unit Lainnya">Unit Lainnya</option>
+          </select>
+          <button id="btn-download-rekap" class="btn btn-secondary text-xs py-1.5 px-3">
+            <i class="fa-solid fa-file-pdf text-red-600"></i> Download Rekap
+          </button>
+        </div>
+      </div>
+
+      <div id="riwayat-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- JS populates cards here -->
+        <div class="col-span-full py-16 flex flex-col items-center justify-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-300">
+          <i class="fa-solid fa-folder-open text-4xl mb-3"></i>
+          <p>Belum ada laporan tersimpan</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: Preview -->
+  <div id="modal-preview" class="hidden fixed inset-0 z-[9999] bg-gray-900 bg-opacity-75 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+        <h3 class="text-base font-bold text-gray-900">Preview Laporan</h3>
+        <div class="flex gap-2">
+          <button id="btn-download-pdf" class="btn btn-primary text-sm">
+            <i class="fa-solid fa-print"></i> Cetak / Download PDF
+          </button>
+          <button id="btn-close-preview" class="text-gray-500 hover:text-red-500 px-3 py-2">
+            <i class="fa-solid fa-xmark text-xl"></i>
+          </button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-200">
+        <div id="preview-content" class="max-w-[800px] mx-auto bg-white p-6 md:p-10 shadow-sm border border-gray-200">
+          <!-- JS populates report preview here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Loading -->
+  <div id="modal-loading" class="fixed inset-0 z-[60] bg-black/50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+      <i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary-600 mb-4"></i>
+      <h3 id="loading-text" class="text-lg font-bold text-gray-900 mb-1">Menyimpan data...</h3>
+      <p id="loading-progress" class="text-sm text-gray-500">Mohon tunggu sebentar</p>
+    </div>
+  </div>
+
+    <!-- OVERLAY: PIN Security Lock -->
+  <div id="pin-lock-overlay" class="fixed inset-0 z-[99999] bg-gray-900/90 flex items-center justify-center p-4">
+    <div id="pin-lock-card" class="bg-white border border-gray-300 w-full max-w-xs sm:max-w-sm p-6 sm:p-7 text-center shadow-2xl">
+      <!-- Shield / K3 Icon -->
+      <div class="inline-flex items-center justify-center w-14 h-14 bg-gray-50 border border-gray-200 text-[#025511] text-2xl mb-4">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      
+      <h2 class="text-lg font-bold text-gray-900 leading-tight">Otorisasi Tim K3 UNAIR</h2>
+      <p class="text-xs text-gray-500 mt-1">Masukkan PIN otorisasi surveyor untuk membuka dashboard inspeksi</p>
+
+      <!-- 8 PIN Indicator Dots -->
+      <div class="flex justify-center items-center gap-2 my-5">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+      </div>
+
+      <!-- Feedback / Status Text -->
+      <p id="pin-status-message" class="text-xs text-gray-500 mb-4 h-5 transition-all">
+        Ketik PIN pada keyboard atau gunakan tombol
+      </p>
+
+      <!-- On-Screen Clean Sharp Keypad -->
+      <div id="pin-numpad" class="grid grid-cols-3 gap-2">
+        <button type="button" data-key="1" class="pin-key-btn">1</button>
+        <button type="button" data-key="2" class="pin-key-btn">2</button>
+        <button type="button" data-key="3" class="pin-key-btn">3</button>
+        <button type="button" data-key="4" class="pin-key-btn">4</button>
+        <button type="button" data-key="5" class="pin-key-btn">5</button>
+        <button type="button" data-key="6" class="pin-key-btn">6</button>
+        <button type="button" data-key="7" class="pin-key-btn">7</button>
+        <button type="button" data-key="8" class="pin-key-btn">8</button>
+        <button type="button" data-key="9" class="pin-key-btn">9</button>
+        <button type="button" data-key="clear" class="pin-key-btn text-xs text-gray-500 hover:text-red-600 font-bold uppercase tracking-wider">C</button>
+        <button type="button" data-key="0" class="pin-key-btn">0</button>
+        <button type="button" data-key="backspace" class="pin-key-btn text-sm text-gray-700 hover:text-red-600">
+          <i class="fa-solid fa-delete-left"></i>
+        </button>
+      </div>
+
+      <div class="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
+        <span>Universitas Airlangga</span>
+        <span>K3 Proteksi Kebakaran</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-[70] flex flex-col gap-3 pointer-events-auto"></div>
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+  <!-- html2pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- App JS (ES Module) -->
+  <script type="module" src="js/app.js?v=16"></script>
+</body>
+</html>
