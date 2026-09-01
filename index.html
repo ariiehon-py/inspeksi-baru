@@ -64,7 +64,7 @@
         <span>Riwayat</span>
       </div>
     </nav>
-    <div class="p-4 border-t border-gray-100">
+    <div class="p-4 border-t border-gray-100 hidden">
       <button type="button" id="btn-lock-app" class="btn btn-secondary w-full justify-center text-xs py-2 text-gray-600 hover:text-red-700 border-gray-200">
         <i class="fa-solid fa-lock text-gray-500"></i>
         <span>Kunci Sesi</span>
@@ -78,7 +78,7 @@
       <img src="assets/logo.png" alt="Logo" class="w-8 h-8 object-contain rounded" onerror="this.src='https://via.placeholder.com/32/16a34a/ffffff?text=K3'">
       <h1 class="font-bold text-base text-gray-900">Inspeksi K3</h1>
     </div>
-    <button type="button" id="btn-lock-app-mobile" class="text-gray-500 hover:text-gray-900 px-2 py-1 border border-gray-200 text-xs flex items-center gap-1.5" title="Kunci Sesi">
+    <button type="button" id="btn-lock-app-mobile" class="hidden text-gray-500 hover:text-gray-900 px-2 py-1 border border-gray-200 text-xs flex items-center gap-1.5" title="Kunci Sesi">
       <i class="fa-solid fa-lock text-[10px]"></i>
       <span>Kunci</span>
     </button>
@@ -175,10 +175,6 @@
             <span class="text-xs text-gray-500 hidden sm:inline">&bull; Klik tombol di bawah untuk langsung menuju bagian</span>
           </div>
           <div class="flex items-center gap-2">
-            <button type="button" id="btn-autofill-test" class="btn btn-secondary text-xs py-1 px-2.5 bg-white hover:bg-gray-50 border-gray-300 text-gray-800 font-bold" title="Otomatis isi semua data form untuk keperluan uji coba & test preview">
-              <i class="fa-solid fa-wand-magic-sparkles text-amber-600"></i>
-              <span>Isi Otomatis (Test)</span>
-            </button>
             <button type="button" id="btn-quick-download-pdf" class="btn btn-secondary text-xs py-1 px-2.5">
               <i class="fa-solid fa-file-pdf text-red-600"></i>
               <span>Download PDF</span>
@@ -266,7 +262,14 @@
         
         <!-- Step 1: Data Umum -->
         <div class="form-step active" data-step="data-umum">
-          <h3 class="text-lg font-bold text-gray-900 mb-5 pb-2 border-b border-gray-200">Data Umum Inspeksi</h3>
+          <div class="flex items-center justify-between mb-5 pb-2 border-b border-gray-200">
+            <h3 class="text-lg font-bold text-gray-900">Data Umum Inspeksi</h3>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">No. Project:</span>
+              <span id="project-number-display" class="font-mono font-bold text-sm px-2.5 py-1 bg-green-50 border border-[#025511] text-[#025511]">-</span>
+              <input type="hidden" id="input-project-number">
+            </div>
+          </div>
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             <div>
               <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5" for="input-tanggal">Tanggal Inspeksi</label>
@@ -474,7 +477,7 @@
             <p class="text-[11px] text-gray-400 mt-1.5 text-center leading-relaxed">
               * Jika terjadi kendala jaringan atau server saat menyimpan, unduh data cadangan ini agar hasil inspeksi Anda tetap aman tersimpan di perangkat.
             </p>
-            <input type="file" id="backup-file-input" accept=".inspeksi" class="hidden">
+            <input type="file" id="backup-file-input" accept=".inspeksi,.json,application/octet-stream,application/json" class="hidden">
           </div>
         </div>
 
@@ -569,8 +572,8 @@
     </div>
   </div>
 
-  <!-- OVERLAY: Pure Stealth PIN Lock (No Text) -->
-  <div id="pin-lock-overlay" class="fixed inset-0 z-[99999] bg-gray-900/95 flex items-center justify-center p-4">
+  <!-- OVERLAY: Pure Stealth PIN Lock (No Text) - DISABLED: tidak tampil di awal sesuai permintaan -->
+  <div id="pin-lock-overlay" class="fixed inset-0 z-[99999] bg-gray-900/95 hidden items-center justify-center p-4" style="display:none">
     <div id="pin-lock-card" class="bg-white border border-gray-300 w-full max-w-[290px] p-6 text-center shadow-2xl">
       
       <!-- 8 PIN Indicator Dots -->

@@ -202,39 +202,6 @@ function buildReportHTML(data) {
     }
 
 
-    // ── Tanda Tangan Surveyor ────────────────────────────────────────────
-    if (surveyorList.length <= 1) {
-        const sName = surveyorList[0] || data.surveyor || '_______________________';
-        html += `
-  <div style="margin-top: 40px; float: right; width: 240px; text-align: center;">
-    <p style="margin: 0;">Surabaya, ${formatDate(data.tanggal)}</p>
-    <p style="margin: 0 0 50px;">Surveyor K3,</p>
-    <p style="font-weight: bold; border-top: 1px solid #000; padding-top: 4px; margin: 0;">
-      ${sName}
-    </p>
-  </div>
-  <div style="clear: both;"></div>`;
-    } else {
-        html += `
-  <div style="margin-top: 36px; page-break-inside: avoid;">
-    <p style="text-align: right; margin: 0 0 10px;">Surabaya, ${formatDate(data.tanggal)}</p>
-    <p style="font-weight: bold; margin: 0 0 12px; border-bottom: 1px solid #000; padding-bottom: 3px;">Tim Surveyor K3:</p>
-    <table style="width: 100%; border: none; border-collapse: collapse; text-align: center; font-size: 11pt;">
-      <tr>
-        ${surveyorList.map((s, idx) => `
-          <td style="border: none; padding: 10px 12px; vertical-align: top; width: ${Math.floor(100 / Math.min(surveyorList.length, 3))}%;">
-            <p style="margin: 0 0 50px; font-weight: bold;">Surveyor ${idx + 1},</p>
-            <p style="font-weight: bold; border-top: 1px solid #000; padding-top: 4px; margin: 0;">
-              ${s}
-            </p>
-          </td>
-          ${(idx + 1) % 3 === 0 && (idx + 1) < surveyorList.length ? '</tr><tr>' : ''}
-        `).join('')}
-      </tr>
-    </table>
-  </div>`;
-    }
-
     html += `\n</div>`;
 
 

@@ -22,10 +22,23 @@ export function bindBackupButtons() {
         if(file) importBackup(file);
         e.target.value = '';
     });
+    // FIX: pastikan accept mencakup .inspeksi dan .json (file lama)
+    if (fileInput) fileInput.accept = '.inspeksi,.json,application/octet-stream,application/json';
 }
 
 export function exportBackup() {
     const data = collectFormData();
+    
+    // Pastikan projectNumber ikut ter-backup
+    if (!data.projectNumber) {
+        // fallback dari state jika collect belum dapat
+        data.projectNumber = state.currentProjectNumber || '';
+    }
+    data._backupMeta = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        projectNumber: data.projectNumber,
+    };
     
     // Clean photoDataMap (strip DOM File objects)
     const cleanPhotoMap = {};
@@ -50,16 +63,19 @@ export function exportBackup() {
     };
     
     const json = JSON.stringify(data);
-    const blob = new Blob([json], { type: 'application/json' });
+    // FIX: gunakan MIME application/octet-stream agar browser menyimpan sebagai .inspeksi bukan .json
+    const blob = new Blob([json], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `inspeksi_${data.fakultas || 'backup'}_${new Date().toISOString().slice(0,10)}.inspeksi`;
+    const safeFakultas = (data.fakultas || 'backup').replace(/\s+/g,'_').replace(/[^A-Za-z0-9_\-]/g,'');
+    const proj = data.projectNumber ? `_${data.projectNumber}` : '';
+    a.download = `inspeksi_${safeFakultas}${proj}_${new Date().toISOString().slice(0,10)}.inspeksi`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('Backup berhasil di-download!', 'success');
+    showToast(`Backup ${data.projectNumber || ''} berhasil di-download (.inspeksi)!`, 'success');
 }
 
 export function importBackup(file) {

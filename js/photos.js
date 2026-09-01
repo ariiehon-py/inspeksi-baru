@@ -34,22 +34,28 @@ export function autoDownloadPhoto(base64, filename) {
 
 export async function handlePhotoUpload(e) {
     const input = e.target;
-    const file = input.files[0];
+    const files = Array.from(input.files || []);
     const key = input.getAttribute('data-key');
-    if (!file || !key) return;
+    if (!files.length || !key) return;
 
     try {
-        const base64 = await compressPhoto(file);
-        
-        // Auto-download to phone for backup
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        autoDownloadPhoto(base64, `inspeksi_${dateStr}_${key}_${Date.now()}.jpg`);
-        
-        if (!state.photoDataMap[key]) state.photoDataMap[key] = [];
-        const photoObj = { base64, file, id: Date.now() };
-        state.photoDataMap[key].push(photoObj);
+        // Hilangkan batas maksimal file: proses semua file yang dipilih tanpa limit
+        for (const file of files) {
+            const base64 = await compressPhoto(file);
+            
+            // Auto-download to phone for backup
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            autoDownloadPhoto(base64, `inspeksi_${dateStr}_${key}_${Date.now()}_${Math.random().toString(36).slice(2,6)}.jpg`);
+            
+            if (!state.photoDataMap[key]) state.photoDataMap[key] = [];
+            const photoObj = { base64, file, id: Date.now() + Math.floor(Math.random()*100000) };
+            state.photoDataMap[key].push(photoObj);
+        }
         
         renderPhotoPreviews(key);
+        if (files.length > 1) {
+            showToast(`${files.length} foto berhasil ditambahkan (tanpa batas)`, 'success');
+        }
         
     } catch (err) {
         showToast('Gagal memproses foto', 'error');

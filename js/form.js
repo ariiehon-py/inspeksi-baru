@@ -1,5 +1,5 @@
 // js/form.js — Form Data Operations
-import { state, resetState } from './state.js';
+import { state, resetState, generateProjectNumber } from './state.js';
 import {
     APAR_CHECKLIST, FIRE_ALARM_CHECKLIST,
     JALUR_EVAKUASI_CHECKLIST, PINTU_DARURAT_CHECKLIST,
@@ -18,6 +18,7 @@ export function collectFormData() {
     const surveyorString = surveyors.join(', ');
 
     const data = {
+        projectNumber: state.currentProjectNumber || document.getElementById('input-project-number')?.value || document.getElementById('project-number-display')?.textContent || '',
         tanggal: document.getElementById('input-tanggal')?.value || '',
         surveyor: surveyorString,
         surveyors: surveyors,
@@ -105,6 +106,11 @@ export function resetForm() {
     document.getElementById('input-tanggal').value = new Date().toISOString().split('T')[0];
     document.getElementById('select-fakultas').value = '';
     document.getElementById('input-lokasi').value = '';
+    // Tampilkan nomor project baru yang sudah di-generate di resetState()
+    const projDisplay = document.getElementById('project-number-display');
+    if (projDisplay) projDisplay.textContent = state.currentProjectNumber || '';
+    const projInput = document.getElementById('input-project-number');
+    if (projInput) projInput.value = state.currentProjectNumber || '';
     
     // Uncheck all surveyor checkboxes & reset count
     document.querySelectorAll('input[name="surveyor_checkbox"]').forEach(cb => cb.checked = false);
@@ -149,14 +155,17 @@ export function populateReviewSummary() {
     const container = document.getElementById('review-summary');
     if (!container) return;
     const data = collectFormData();
+    // Pastikan projectNumber tampil di ringkasan
+    if (!data.projectNumber) data.projectNumber = state.currentProjectNumber || '';
     
     let html = `<div class="bg-white p-4 rounded border border-gray-200 mb-4">
         <h3 class="font-bold text-base mb-2 text-gray-900">Informasi Umum</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <p><strong>No. Project:</strong> <span class="font-mono font-bold text-[#025511]">${data.projectNumber || '-'}</span></p>
             <p><strong>Tanggal:</strong> ${data.tanggal || '-'}</p>
             <p><strong>Fakultas:</strong> ${data.fakultas || '-'}</p>
             <p><strong>Lokasi:</strong> ${data.lokasi || '-'}</p>
-            <p><strong>Surveyor (${data.surveyors?.length || 0}):</strong> ${(data.surveyors && data.surveyors.length > 0) ? data.surveyors.join('; ') : (data.surveyor || '-')}</p>
+            <p class="sm:col-span-2"><strong>Surveyor (${data.surveyors?.length || 0}):</strong> ${(data.surveyors && data.surveyors.length > 0) ? data.surveyors.join('; ') : (data.surveyor || '-')}</p>
         </div>
     </div>`;
 
@@ -201,7 +210,23 @@ export function populateReviewSummary() {
 }
 
 export function restoreFormFromData(data) {
+    // Preserve currentDocId & projectNumber across resetForm() which would otherwise clear/regenerate
+    const preservedDocId = state.currentDocId;
+    const preservedProjectNumber = data.projectNumber || state.currentProjectNumber;
     resetForm();
+    if (preservedDocId) state.currentDocId = preservedDocId;
+    // Jika data sudah punya nomor project, pakai itu; kalau belum ada, generate baru dan akan dimigrasi saat save
+    if (data.projectNumber) {
+        state.currentProjectNumber = data.projectNumber;
+    } else if (preservedProjectNumber) {
+        state.currentProjectNumber = preservedProjectNumber;
+    } else {
+        state.currentProjectNumber = generateProjectNumber();
+    }
+    const projDisplay = document.getElementById('project-number-display');
+    if (projDisplay) projDisplay.textContent = state.currentProjectNumber;
+    const projInput = document.getElementById('input-project-number');
+    if (projInput) projInput.value = state.currentProjectNumber;
     
     document.getElementById('input-tanggal').value = data.tanggal || '';
     document.getElementById('select-fakultas').value = data.fakultas || '';

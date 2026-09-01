@@ -8,12 +8,11 @@ import { bindAddUnitButtons } from './units.js';
 import { bindChecklistEvents } from './checklist.js';
 import { bindBackupButtons } from './backup.js';
 import { bindFilterRiwayat, loadRiwayat, downloadRekap } from './riwayat.js';
-import { saveToFirestore } from './firestore.js';
+import { saveToFirestore, bindAutoSaveListeners } from './firestore.js';
 import { validateForm, populateReviewSummary, resetForm } from './form.js';
+import { state, generateProjectNumber } from './state.js';
 import { generatePreview, downloadPDF } from './preview.js';
 import { renderRecommendationEditor, initEditors } from './editor.js';
-import { autoFillTestData } from './autofill.js';
-import { initPinLock } from './auth.js';
 
 // ─── Cross-module Callbacks ────────────────────────────────────────────
 // These registrations avoid circular dependencies between modules.
@@ -41,11 +40,6 @@ function bindActionButtons() {
         btn.addEventListener('click', () => {
             saveToFirestore('draf');
         });
-    });
-
-    // Auto-fill test data button
-    document.getElementById('btn-autofill-test')?.addEventListener('click', () => {
-        autoFillTestData();
     });
 
     document.getElementById('btn-simpan-final')?.addEventListener('click', () => {
@@ -94,6 +88,15 @@ function bindDownloadRekap() {
 // ─── Application Init ──────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Init nomor project random untuk inspeksi baru (jika belum ada)
+    if (!state.currentProjectNumber) {
+        state.currentProjectNumber = generateProjectNumber();
+    }
+    const projDisp = document.getElementById('project-number-display');
+    if (projDisp) projDisp.textContent = state.currentProjectNumber;
+    const projInp = document.getElementById('input-project-number');
+    if (projInp) projInp.value = state.currentProjectNumber;
+
     // Set default date
     const dateInput = document.getElementById('input-tanggal');
     if (dateInput) {
@@ -133,10 +136,13 @@ document.addEventListener('DOMContentLoaded', () => {
     bindFilterRiwayat();
     bindChecklistEvents();
     bindDownloadRekap();
+    // Auto-save: gedung info langsung tersimpan ke riwayat (draf) tanpa menunggu save final
+    bindAutoSaveListeners();
 
     // Show dashboard as default view
     showView('dashboard');
 
-    // Initialize Security PIN Lock
-    initPinLock();
+    // PIN Lock di awal dinonaktifkan sesuai permintaan (tidak ada password di awal)
+    const _pinOverlay = document.getElementById('pin-lock-overlay');
+    if (_pinOverlay) _pinOverlay.style.display = 'none';
 });

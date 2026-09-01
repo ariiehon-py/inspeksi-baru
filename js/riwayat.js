@@ -1,6 +1,6 @@
 // js/riwayat.js — History View & Rekap Download
 import { db } from './config.js';
-import { state } from './state.js';
+import { state, generateProjectNumber } from './state.js';
 import { calculateOverallScore } from './checklist.js';
 import { restoreFormFromData } from './form.js';
 import { showView } from './navigation.js';
@@ -38,19 +38,24 @@ export async function loadRiwayat() {
         
         snapshot.forEach(doc => {
             const data = doc.data();
-            // Filter by final status
-            if (data.status === 'final') {
+            // Tampilkan semua status: final, draf/draft, dan data lama tanpa status — agar riwayat selalu update
+            const status = data.status || 'draf';
+            const isVisible = (status === 'final' || status === 'draf' || status === 'draft');
+            if (isVisible) {
                 if (!filterFakultas || data.fakultas === filterFakultas) {
                     docs.push({ id: doc.id, data });
                 }
             }
         });
 
-        // Sort descending by date or createdAt in client memory
+        // Sort descending by updatedAt / createdAt / tanggal in client memory
         docs.sort((a, b) => {
-            const timeA = a.data.createdAt?.toMillis ? a.data.createdAt.toMillis() : (new Date(a.data.tanggal || 0).getTime());
-            const timeB = b.data.createdAt?.toMillis ? b.data.createdAt.toMillis() : (new Date(b.data.tanggal || 0).getTime());
-            return timeB - timeA;
+            const getTime = (d) => {
+                if (d.updatedAt?.toMillis) return d.updatedAt.toMillis();
+                if (d.createdAt?.toMillis) return d.createdAt.toMillis();
+                return new Date(d.tanggal || 0).getTime();
+            };
+            return getTime(b.data) - getTime(a.data);
         });
 
         if (docs.length === 0) {
@@ -59,6 +64,18 @@ export async function loadRiwayat() {
             if (dashboardContainer) dashboardContainer.innerHTML = emptyHtml;
             return;
         }
+
+        // Migrasi: beri nomor project untuk dokumen lama yang belum punya
+        const missing = docs.filter(({ data }) => !data.projectNumber);
+        if (missing.length > 0) {
+            missing.forEach(({ id }) => {
+                const newNum = generateProjectNumber();
+                // Update Firestore tanpa blocking UI; local data langsung di-set agar tampil
+                db.collection('reports').doc(id).update({ projectNumber: newNum }).catch(() => {});
+                const target = docs.find(d => d.id === id);
+                if (target) target.data.projectNumber = newNum;
+            });
+        }
         
         if (container) container.innerHTML = '';
         if (dashboardContainer) dashboardContainer.innerHTML = '';
@@ -66,20 +83,28 @@ export async function loadRiwayat() {
         let count = 0;
         docs.forEach(({ id, data }) => {
             const score = calculateOverallScore(data);
+            const status = data.status || 'draf';
+            const isDraft = (status === 'draf' || status === 'draft');
+            const statusBadge = isDraft
+                ? '<span class="inline-block px-1.5 py-0.5 border border-amber-300 bg-amber-50 text-amber-700 text-[10px] font-bold">DRAF</span>'
+                : '<span class="inline-block px-1.5 py-0.5 border border-green-300 bg-green-50 text-[#025511] text-[10px] font-bold">FINAL</span>';
             count++;
             
             // Riwayat page card (Grid layout, clean professional card with action buttons)
             if (container) {
                 const card = document.createElement('div');
                 card.className = 'bg-white p-4 border border-gray-200 hover:border-gray-400 transition-all flex flex-col justify-between';
+                const projNum = data.projectNumber || '-';
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start gap-2 mb-2">
                             <span class="inline-block px-1.5 py-0.5 border border-gray-300 bg-gray-50 text-gray-700 text-[10px] font-bold">${data.tanggal || '-'}</span>
-                            <div class="text-right shrink-0">
+                            <div class="text-right shrink-0 flex items-center gap-1.5">
+                                ${statusBadge}
                                 <span class="text-base font-bold ${score >= 80 ? 'text-[#025511]' : (score >= 60 ? 'text-amber-700' : 'text-red-700')}">${score}%</span>
                             </div>
                         </div>
+                        <p class="text-[11px] font-mono font-bold text-[#025511] bg-green-50 border border-green-200 inline-block px-1.5 py-0.5 mb-1.5"><i class="fa-solid fa-hashtag mr-1"></i>${projNum}</p>
                         <h4 class="font-bold text-gray-900 text-sm leading-snug mb-1.5">${data.fakultas || 'Tanpa Fakultas'}</h4>
                         <p class="text-xs text-gray-600 truncate mb-0.5"><i class="fa-solid fa-location-dot text-gray-400 mr-1.5"></i>${data.lokasi || '-'}</p>
                         <p class="text-xs text-gray-500 truncate mb-3"><i class="fa-solid fa-users text-gray-400 mr-1.5"></i>${data.surveyor || '-'}</p>
@@ -130,10 +155,14 @@ export async function loadRiwayat() {
             if (dashboardContainer && count <= 6) {
                 const dashCard = document.createElement('div');
                 dashCard.className = 'p-3 border border-gray-200 hover:border-gray-400 bg-white flex items-center justify-between transition-all';
+                const dashBadge = isDraft
+                    ? '<span class="text-[9px] font-bold px-1 py-0.5 border bg-amber-50 text-amber-700 border-amber-200">DRAF</span>'
+                    : '<span class="text-[9px] font-bold px-1 py-0.5 border bg-green-50 text-[#025511] border-green-200">FINAL</span>';
+                const shortProj = data.projectNumber ? `<span class="text-[9px] font-mono font-bold text-[#025511]">${data.projectNumber}</span>` : '';
                 dashCard.innerHTML = `
                     <div class="min-w-0 pr-3 cursor-pointer flex-1">
-                        <h4 class="font-bold text-gray-900 text-xs sm:text-sm truncate">${data.fakultas || 'Tanpa Fakultas'}</h4>
-                        <p class="text-[11px] text-gray-500 truncate">${data.tanggal || '-'} &bull; ${data.lokasi || '-'}</p>
+                        <h4 class="font-bold text-gray-900 text-xs sm:text-sm truncate">${data.fakultas || 'Tanpa Fakultas'} ${dashBadge}</h4>
+                        <p class="text-[11px] text-gray-500 truncate">${shortProj ? shortProj + ' &bull; ' : ''}${data.tanggal || '-'} &bull; ${data.lokasi || '-'}</p>
                     </div>
                     <div class="shrink-0 flex items-center gap-3">
                         <div class="text-right">

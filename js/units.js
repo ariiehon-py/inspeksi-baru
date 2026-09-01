@@ -125,7 +125,13 @@ export function addUnit(type, idx, checklist) {
                     <textarea id="${prefix}_item_${itemIndex}_keterangan" rows="2" placeholder="Catatan/Keterangan..." class="w-full px-3 py-1.5 border border-gray-200 rounded text-xs focus:border-gray-400 outline-none"></textarea>
                 </div>
                 <div>
-                    <input type="file" id="${prefix}_item_${itemIndex}_foto" accept="image/*" capture="environment" class="text-xs photo-upload-input text-gray-500" data-key="${prefix}_item_${itemIndex}_foto">
+                    <div class="flex items-center gap-2">
+                        <label class="btn btn-secondary text-xs py-1.5 px-3 cursor-pointer bg-white hover:bg-gray-50 border-gray-300">
+                            <i class="fa-solid fa-camera mr-1 text-[#025511]"></i> Ambil / Upload Foto
+                            <input type="file" id="${prefix}_item_${itemIndex}_foto" accept="image/*" multiple class="hidden photo-upload-input" data-key="${prefix}_item_${itemIndex}_foto">
+                        </label>
+                        <span class="text-[10px] text-gray-500">Kamera atau Galeri • bisa banyak file, tanpa batas</span>
+                    </div>
                     <div id="preview_${prefix}_item_${itemIndex}_foto" class="flex flex-wrap gap-2 mt-2"></div>
                 </div>
             </div>
