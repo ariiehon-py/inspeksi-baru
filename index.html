@@ -322,6 +322,16 @@
         <div class="form-step hidden" data-step="apar">
           <div class="flex items-center justify-between mb-5 border-b border-gray-200 pb-2">
             <h3 class="text-lg font-bold text-gray-900">Inspeksi APAR (Proteksi Aktif)</h3>
+            <span id="apar-total-badge" class="text-xs font-bold px-2 py-1 bg-gray-100 border border-gray-200 hidden">0 APAR</span>
+          </div>
+          <!-- APAR Navigator: daftar khusus untuk reorder & lompat tanpa scroll panjang -->
+          <div id="apar-nav-panel" class="bg-gray-50 border border-gray-200 p-3 mb-4 hidden sticky top-2 z-20 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-700"><i class="fa-solid fa-list-ol mr-1 text-[#025511]"></i> Daftar APAR dalam Project (<span id="apar-nav-count">0</span>)</h4>
+              <span class="text-[11px] text-gray-400">Klik untuk lompat • Atur urutan ↑↓</span>
+            </div>
+            <div id="apar-nav-list" class="space-y-1 max-h-52 overflow-y-auto pr-1"></div>
+            <p class="text-[11px] text-gray-400 mt-2">Seret urutan untuk ngerapiin laporan — urutan di sini = urutan di PDF nanti.</p>
           </div>
           <div id="apar-units-container" class="space-y-4 mb-4">
             <!-- Dynamically populated by JS -->

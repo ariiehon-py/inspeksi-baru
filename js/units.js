@@ -39,6 +39,7 @@ export function removeUnit(type, idx) {
         else if (type === 'jalur-evakuasi') state.deletedJalurEvakuasis.add(idx);
         else if (type === 'pintu-darurat') state.deletedPintuDarurats.add(idx);
         else if (type === 'tangga-darurat') state.deletedTanggaDarurats.add(idx);
+        if (type === 'apar') updateAparNav();
     }
 }
 
@@ -53,6 +54,8 @@ export function addUnit(type, idx, checklist) {
     let prefix = `${typePrefix}_${idx}`;
     const card = document.createElement('div');
     card.id = `${type}_card_${idx}`;
+    card.dataset.unitId = idx;
+    card.dataset.unitType = type;
     card.className = 'bg-white rounded border border-gray-200 p-4 sm:p-5 mb-4 unit-card';
 
     let unitTitle = type.replace('-', ' ').toUpperCase() + ` #${idx}`;
@@ -125,12 +128,15 @@ export function addUnit(type, idx, checklist) {
                     <textarea id="${prefix}_item_${itemIndex}_keterangan" rows="2" placeholder="Catatan/Keterangan..." class="w-full px-3 py-1.5 border border-gray-200 rounded text-xs focus:border-gray-400 outline-none"></textarea>
                 </div>
                 <div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                         <label class="btn btn-secondary text-xs py-1.5 px-3 cursor-pointer bg-white hover:bg-gray-50 border-gray-300">
-                            <i class="fa-solid fa-camera mr-1 text-[#025511]"></i> Ambil / Upload Foto
-                            <input type="file" id="${prefix}_item_${itemIndex}_foto" accept="image/*" multiple class="hidden photo-upload-input" data-key="${prefix}_item_${itemIndex}_foto">
+                            <i class="fa-solid fa-camera mr-1 text-[#025511]"></i> Ambil Foto
+                            <input type="file" accept="image/*" capture="environment" class="hidden photo-upload-input" data-key="${prefix}_item_${itemIndex}_foto">
                         </label>
-                        <span class="text-[10px] text-gray-500">Kamera atau Galeri • bisa banyak file, tanpa batas</span>
+                        <label class="btn btn-secondary text-xs py-1.5 px-3 cursor-pointer bg-white hover:bg-gray-50 border-gray-300">
+                            <i class="fa-solid fa-image mr-1 text-gray-600"></i> Pilih dari Galeri
+                            <input type="file" accept="image/*" multiple class="hidden photo-upload-input" data-key="${prefix}_item_${itemIndex}_foto">
+                        </label>
                     </div>
                     <div id="preview_${prefix}_item_${itemIndex}_foto" class="flex flex-wrap gap-2 mt-2"></div>
                 </div>
@@ -161,7 +167,105 @@ export function addUnit(type, idx, checklist) {
     card.querySelectorAll('.photo-upload-input').forEach(input => {
         input.addEventListener('change', handlePhotoUpload);
     });
+
+    if (type === 'apar') {
+        // update navigator after DOM inserted
+        setTimeout(updateAparNav, 50);
+        // auto-scroll ke card baru biar langsung kelihatan
+        setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+    }
+}
+
+// ─── APAR Navigator & Reorder ────────────────────────────────────────
+export function updateAparNav() {
+    const container = document.getElementById('apar-units-container');
+    const panel = document.getElementById('apar-nav-panel');
+    const listEl = document.getElementById('apar-nav-list');
+    const countEl = document.getElementById('apar-nav-count');
+    const badgeEl = document.getElementById('apar-total-badge');
+    if (!container || !panel || !listEl) return;
+
+    const cards = Array.from(container.querySelectorAll('.unit-card'));
+    const visible = cards.filter(c => c.style.display !== 'none');
+
+    if (visible.length === 0) {
+        panel.classList.add('hidden');
+        if (badgeEl) badgeEl.classList.add('hidden');
+        listEl.innerHTML = '';
+        if (countEl) countEl.textContent = '0';
+        return;
+    }
+
+    panel.classList.remove('hidden');
+    if (badgeEl) { badgeEl.textContent = `${visible.length} APAR`; badgeEl.classList.remove('hidden'); }
+    if (countEl) countEl.textContent = visible.length;
+
+    listEl.innerHTML = visible.map((card, pos) => {
+        const idx = card.dataset.unitId;
+        const prefix = `apar_${idx}`;
+        const nomor = document.getElementById(`${prefix}_nomor`)?.value?.trim() || `APAR #${idx}`;
+        const lokasi = document.getElementById(`${prefix}_lokasi`)?.value?.trim() || '-';
+        const media = document.getElementById(`${prefix}_media`)?.value?.trim() || '';
+        const isFirst = pos === 0;
+        const isLast = pos === visible.length - 1;
+        return `
+            <div class="flex items-center gap-2 p-2 bg-white border border-gray-200 hover:border-gray-400 hover:bg-gray-50 cursor-pointer group" data-nav-idx="${idx}">
+                <span class="shrink-0 w-6 h-6 flex items-center justify-center bg-[#025511] text-white text-[11px] font-bold">${pos + 1}</span>
+                <div class="min-w-0 flex-1" onclick="scrollToApar(${idx})">
+                    <div class="text-xs font-bold text-gray-900 truncate">${nomor}</div>
+                    <div class="text-[11px] text-gray-500 truncate">${lokasi}${media ? ' • ' + media : ''}</div>
+                </div>
+                <div class="shrink-0 flex items-center gap-1">
+                    <button type="button" onclick="moveApar(${idx}, -1)" ${isFirst ? 'disabled' : ''} class="w-6 h-6 flex items-center justify-center border border-gray-200 bg-white hover:bg-gray-100 text-[10px] disabled:opacity-30 disabled:cursor-not-allowed" title="Naik"><i class="fa-solid fa-chevron-up"></i></button>
+                    <button type="button" onclick="moveApar(${idx}, 1)" ${isLast ? 'disabled' : ''} class="w-6 h-6 flex items-center justify-center border border-gray-200 bg-white hover:bg-gray-100 text-[10px] disabled:opacity-30 disabled:cursor-not-allowed" title="Turun"><i class="fa-solid fa-chevron-down"></i></button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // live update nomor/lokasi di nav saat diketik
+    visible.forEach(card => {
+        const idx = card.dataset.unitId;
+        ['nomor','lokasi','media'].forEach(field => {
+            const el = document.getElementById(`apar_${idx}_${field}`);
+            if (el && !el.dataset.navBound) {
+                el.dataset.navBound = '1';
+                el.addEventListener('input', () => {
+                    // debounce ringan
+                    clearTimeout(el._navTimer);
+                    el._navTimer = setTimeout(updateAparNav, 300);
+                });
+                el.addEventListener('change', updateAparNav);
+            }
+        });
+    });
+}
+
+export function scrollToApar(idx) {
+    const card = document.getElementById(`apar_card_${idx}`);
+    if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        card.classList.add('ring-2','ring-[#025511]','ring-offset-1');
+        setTimeout(() => card.classList.remove('ring-2','ring-[#025511]','ring-offset-1'), 1200);
+    }
+}
+
+export function moveApar(idx, dir) {
+    const container = document.getElementById('apar-units-container');
+    const card = document.getElementById(`apar_card_${idx}`);
+    if (!container || !card) return;
+    const cards = Array.from(container.querySelectorAll('.unit-card'));
+    const pos = cards.indexOf(card);
+    const newPos = pos + dir;
+    if (newPos < 0 || newPos >= cards.length) return;
+    const ref = cards[newPos];
+    if (dir < 0) container.insertBefore(card, ref);
+    else container.insertBefore(card, ref.nextSibling);
+    updateAparNav();
 }
 
 // Expose to window for inline onclick handler in dynamic HTML
 window.removeUnit = removeUnit;
+window.updateAparNav = updateAparNav;
+window.scrollToApar = scrollToApar;
+window.moveApar = moveApar;

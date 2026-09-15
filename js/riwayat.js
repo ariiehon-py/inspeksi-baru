@@ -12,20 +12,92 @@ export function bindFilterRiwayat() {
     });
 }
 
-export async function loadRiwayat() {
+// Cache & debounce untuk biar loading gak lama terus
+let _riwayatCache = null;
+let _riwayatCacheTime = 0;
+let _riwayatFetching = null;
+const RIWAYAT_CACHE_MS = 30000; // 30 detik
+
+function fetchWithTimeout(promise, ms = 8000) {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout - koneksi Firestore lambat, coba refresh')), ms))
+    ]);
+}
+
+export async function loadRiwayat(force = false) {
     const container = document.getElementById('riwayat-list');
     const dashboardContainer = document.getElementById('dashboard-riwayat-list');
     
+    // Pakai cache kalau masih fresh dan bukan force (biar gak fetch tiap pindah view)
+    if (!force && _riwayatCache && (Date.now() - _riwayatCacheTime < RIWAYAT_CACHE_MS)) {
+        try { renderRiwayatDocs(_riwayatCache, container, dashboardContainer); return; } catch {}
+    }
+    // Cegah double fetch barengan
+    if (_riwayatFetching) {
+        try { await _riwayatFetching; } catch {}
+        if (_riwayatCache) { renderRiwayatDocs(_riwayatCache, container, dashboardContainer); return; }
+    }
+
     if (container) {
-        container.innerHTML = '<div class="text-center py-8 text-gray-400 col-span-full"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
+        container.innerHTML = '<div class="text-center py-8 text-gray-400 col-span-full"><i class="fas fa-spinner fa-spin text-2xl"></i><p class="text-xs mt-2">Memuat riwayat...</p><button onclick="window.loadRiwayat && window.loadRiwayat(true)" class="mt-3 text-xs px-3 py-1 border border-gray-300 bg-white hover:bg-gray-50">Refresh</button></div>';
     }
     if (dashboardContainer) {
         dashboardContainer.innerHTML = '<div class="text-center py-8 text-gray-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p class="text-xs">Memuat riwayat...</p></div>';
     }
     
+    const doFetch = async () => {
+        // limit 50 biar gak download semua kalau data sudah ratusan, dan sudah dibersihkan base64 jadi ringan
+        try {
+            const snap = await fetchWithTimeout(db.collection('reports').orderBy('updatedAt', 'desc').limit(50).get(), 8000);
+            return snap;
+        } catch (e) {
+            // fallback kalau index belum ada atau timeout di orderBy
+            const snap2 = await fetchWithTimeout(db.collection('reports').limit(50).get(), 8000);
+            return snap2;
+        }
+    };
+
+    // Retry 2x kalau timeout
+    let snapshot = null;
+    let lastErr = null;
+    _riwayatFetching = (async () => {
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                snapshot = await doFetch();
+                lastErr = null;
+                break;
+            } catch (e) {
+                lastErr = e;
+                if (attempt < 2) await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+            }
+        }
+        if (lastErr) throw lastErr;
+        return snapshot;
+    })();
+
     try {
-        // Query reports without complex composite index constraints
-        const snapshot = await db.collection('reports').get();
+        snapshot = await _riwayatFetching;
+        _riwayatFetching = null;
+        if (snapshot) {
+            _riwayatCache = snapshot;
+            _riwayatCacheTime = Date.now();
+            renderRiwayatDocs(snapshot, container, dashboardContainer);
+            return;
+        }
+    } catch (error) {
+        _riwayatFetching = null;
+        const retryHtml = (msg) => `<div class="text-center py-8 text-amber-600 col-span-full"><p class="text-sm">${msg}</p><button onclick="window.loadRiwayat && window.loadRiwayat(true)" class="mt-3 text-xs px-4 py-1.5 bg-[#025511] text-white hover:bg-[#013b0c]">Coba Lagi</button><p class="text-[11px] text-gray-400 mt-1">Koneksi lambat, tidak perlu refresh halaman</p></div>`;
+        const errorHtml = retryHtml(`Gagal memuat: ${error.message}`);
+        if (container) container.innerHTML = errorHtml;
+        if (dashboardContainer) dashboardContainer.innerHTML = retryHtml(`Gagal memuat riwayat`);
+        return;
+    }
+}
+window.loadRiwayat = loadRiwayat;
+
+function renderRiwayatDocs(snapshot, container, dashboardContainer) {
+    try {
         if (snapshot.empty) {
             const emptyHtml = '<div class="col-span-full py-12 flex flex-col items-center justify-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-300"><i class="fa-solid fa-folder-open text-3xl mb-2"></i><p class="text-sm">Belum ada laporan tersimpan</p></div>';
             if (container) container.innerHTML = emptyHtml;

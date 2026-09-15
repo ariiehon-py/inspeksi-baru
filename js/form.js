@@ -36,33 +36,67 @@ export function collectFormData() {
         photoDataMap: state.photoDataMap || {},
     };
     
-    // Collect APAR
-    for (let i = 1; i <= state.aparCounter; i++) {
-        if (state.deletedApars.has(i)) continue;
-        const prefix = `apar_${i}`;
-        const unit = {
-            id: i,
-            nomor: document.getElementById(`${prefix}_nomor`)?.value || '',
-            lokasi: document.getElementById(`${prefix}_lokasi`)?.value || '',
-            media: document.getElementById(`${prefix}_media`)?.value || '',
-            kapasitas: document.getElementById(`${prefix}_kapasitas`)?.value || '',
-            tglProduksi: document.getElementById(`${prefix}_tgl_produksi`)?.value || '',
-            tglKadaluarsa: document.getElementById(`${prefix}_tgl_kadaluarsa`)?.value || '',
-            checklist: [],
-        };
-        APAR_CHECKLIST.forEach((item, idx) => {
-            const itemIdx = idx + 1;
-            const radio = document.querySelector(`input[name="${prefix}_item_${itemIdx}_status"]:checked`);
-            unit.checklist.push({
-                label: item.label,
-                status: radio ? radio.value : '',
-                keterangan: document.getElementById(`${prefix}_item_${itemIdx}_keterangan`)?.value || '',
-                fotoUrls: [], // Filled during save or taken from photoDataMap
-                fotoKey: `${prefix}_item_${itemIdx}_foto`
+    // Collect APAR — pakai urutan DOM (hasil reorder di panel) biar sesuai yang diatur user
+    const aparContainer = document.getElementById('apar-units-container');
+    if (aparContainer) {
+        const cards = Array.from(aparContainer.querySelectorAll('.unit-card'));
+        for (const card of cards) {
+            const i = parseInt(card.dataset.unitId || card.id.split('_')[2] || '0', 10);
+            if (!i || state.deletedApars.has(i)) continue;
+            const prefix = `apar_${i}`;
+            const unit = {
+                id: i,
+                nomor: document.getElementById(`${prefix}_nomor`)?.value || '',
+                lokasi: document.getElementById(`${prefix}_lokasi`)?.value || '',
+                media: document.getElementById(`${prefix}_media`)?.value || '',
+                kapasitas: document.getElementById(`${prefix}_kapasitas`)?.value || '',
+                tglProduksi: document.getElementById(`${prefix}_tgl_produksi`)?.value || '',
+                tglKadaluarsa: document.getElementById(`${prefix}_tgl_kadaluarsa`)?.value || '',
+                checklist: [],
+            };
+            APAR_CHECKLIST.forEach((item, idx) => {
+                const itemIdx = idx + 1;
+                const radio = document.querySelector(`input[name="${prefix}_item_${itemIdx}_status"]:checked`);
+                unit.checklist.push({
+                    label: item.label,
+                    status: radio ? radio.value : '',
+                    keterangan: document.getElementById(`${prefix}_item_${itemIdx}_keterangan`)?.value || '',
+                    fotoUrls: [],
+                    fotoKey: `${prefix}_item_${itemIdx}_foto`
+                });
             });
-        });
-        unit.score = calculateScore('apar', i, 'apar');
-        data.aparUnits.push(unit);
+            unit.score = calculateScore('apar', i, 'apar');
+            data.aparUnits.push(unit);
+        }
+    } else {
+        // fallback lama kalau container tidak ada
+        for (let i = 1; i <= state.aparCounter; i++) {
+            if (state.deletedApars.has(i)) continue;
+            const prefix = `apar_${i}`;
+            const unit = {
+                id: i,
+                nomor: document.getElementById(`${prefix}_nomor`)?.value || '',
+                lokasi: document.getElementById(`${prefix}_lokasi`)?.value || '',
+                media: document.getElementById(`${prefix}_media`)?.value || '',
+                kapasitas: document.getElementById(`${prefix}_kapasitas`)?.value || '',
+                tglProduksi: document.getElementById(`${prefix}_tgl_produksi`)?.value || '',
+                tglKadaluarsa: document.getElementById(`${prefix}_tgl_kadaluarsa`)?.value || '',
+                checklist: [],
+            };
+            APAR_CHECKLIST.forEach((item, idx) => {
+                const itemIdx = idx + 1;
+                const radio = document.querySelector(`input[name="${prefix}_item_${itemIdx}_status"]:checked`);
+                unit.checklist.push({
+                    label: item.label,
+                    status: radio ? radio.value : '',
+                    keterangan: document.getElementById(`${prefix}_item_${itemIdx}_keterangan`)?.value || '',
+                    fotoUrls: [],
+                    fotoKey: `${prefix}_item_${itemIdx}_foto`
+                });
+            });
+            unit.score = calculateScore('apar', i, 'apar');
+            data.aparUnits.push(unit);
+        }
     }
     
     // Collect Others (Helper)
@@ -340,4 +374,6 @@ export function restoreFormFromData(data) {
     }
 
     showView('form');
+    // refresh APAR navigator setelah restore agar urutan sesuai data
+    setTimeout(() => window.updateAparNav?.(), 200);
 }
