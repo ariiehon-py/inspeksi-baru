@@ -17,8 +17,8 @@ let _riwayatCache = null;
 let _riwayatCacheTime = 0;
 let _riwayatFetching = null;
 const RIWAYAT_CACHE_MS = 60000; // 60 detik (biar pindah view instan)
-const RIWAYAT_LIMIT = 6; // 12 -> 6 : 15.88s/1.9MB kamu jadi ~1MB/7s, lolos timeout Incognito
-const LS_KEY = 'riwayat_cache_v2';
+const RIWAYAT_LIMIT = 50; // 6 -> 50 lagi setelah billing aman + preview 3KB (6 bikin Perikanan ilang)
+const LS_KEY = 'riwayat_cache_v3'; // bump v2 -> v3 biar cache 6-item lama ke-reset
 
 function fetchWithTimeout(promise, ms = 20000) {
     return Promise.race([
@@ -118,13 +118,31 @@ export async function loadRiwayat(force = false) {
     }
     
     const doFetch = async () => {
-        // STRATEGI BARU: coba fetch dari reports_preview dulu (3KB, bukan 5.7MB). Kalau kosong, fallback ke reports
+        // STRATEGI: ambil preview (3KB) + reports (full) parallel, lalu merge dedup by doc id. Preview tidak menggantikan reports.
+        let snapPreview = null, snapReports = null;
         try {
-            const snapPreview = await fetchWithTimeout(db.collection('reports_preview').limit(RIWAYAT_LIMIT).get(), 8000);
-            if (!snapPreview.empty) return snapPreview;
-        } catch (e) { console.warn('[Riwayat] preview fetch gagal, fallback reports:', e.message); }
-        const snap = await fetchWithTimeout(db.collection('reports').limit(RIWAYAT_LIMIT).get(), 15000);
-        return snap;
+            snapPreview = await fetchWithTimeout(db.collection('reports_preview').limit(RIWAYAT_LIMIT).get(), 8000);
+        } catch (e) { console.warn('[Riwayat] preview fetch gagal:', e.message); }
+        try {
+            snapReports = await fetchWithTimeout(db.collection('reports').limit(RIWAYAT_LIMIT).get(), 15000);
+        } catch (e) { console.warn('[Riwayat] reports fetch gagal:', e.message); }
+
+        const hasPreview = snapPreview && !snapPreview.empty;
+        const hasReports = snapReports && !snapReports.empty;
+        if (hasPreview && !hasReports) return snapPreview;
+        if (!hasPreview && hasReports) return snapReports;
+        if (!hasPreview && !hasReports) return snapReports || snapPreview;
+        // keduanya ada -> merge, prioritaskan reports (ada aparUnits lengkap) kalau id sama
+        const map = new Map();
+        snapReports.forEach(doc => map.set(doc.id, { id: doc.id, data: doc.data() }));
+        snapPreview.forEach(doc => {
+            if (!map.has(doc.id)) map.set(doc.id, { id: doc.id, data: doc.data() });
+        });
+        const docs = Array.from(map.values());
+        return {
+            empty: docs.length === 0,
+            forEach: (cb) => docs.forEach(({ id, data }) => cb({ id, data: () => data }))
+        };
     };
 
     let snapshot = null;
