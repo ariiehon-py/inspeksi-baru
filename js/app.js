@@ -13,6 +13,7 @@ import { validateForm, populateReviewSummary, resetForm } from './form.js';
 import { state, generateProjectNumber } from './state.js';
 import { generatePreview, downloadPDF } from './preview.js';
 import { renderRecommendationEditor, initEditors } from './editor.js';
+import { bindMergeButtons } from './merge.js';
 
 // ─── Cross-module Callbacks ────────────────────────────────────────────
 // These registrations avoid circular dependencies between modules.
@@ -136,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindFilterRiwayat();
     bindChecklistEvents();
     bindDownloadRekap();
+    bindMergeButtons();
     // Auto-save: gedung info langsung tersimpan ke riwayat (draf) tanpa menunggu save final
     bindAutoSaveListeners();
 

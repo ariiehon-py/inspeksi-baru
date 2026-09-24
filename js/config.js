@@ -18,3 +18,7 @@ if (!firebase.apps.length) {
 export const db = firebase.firestore();
 export const storage = firebase.storage();
 export { firebase };
+
+// Persistence dimatikan dulu — enablePersistence lama bikin error WebChannel 404 + timeout 9.5s kamu
+// Kalau butuh offline, aktifkan via FirestoreSettings.cache (SDK 10+) bukan enablePersistence deprecated
+// try { db.enablePersistence({ synchronizeTabs: true }).catch(()=>{}); } catch {}

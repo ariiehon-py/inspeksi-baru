@@ -186,12 +186,43 @@ export async function saveToFirestore(status, options = {}) {
         
         // Selalu gunakan docId yang sama jika sudah ada — menimpa project yang sama, tidak bikin baru
         // Jika currentDocId sudah ada, update dokumen yang sama (merge)
+        const targetDocId = state.currentDocId || docIdToUse;
         if (state.currentDocId) {
             await db.collection('reports').doc(state.currentDocId).set(formData, { merge: true });
         } else {
             await db.collection('reports').doc(docIdToUse).set(formData);
             state.currentDocId = docIdToUse;
         }
+        // Tulis preview ringan untuk list (3KB bukan 5MB) — ini yang bikin Riwayat lemot kamu
+        try {
+            const { calculateOverallScore } = await import('./checklist.js');
+            const score = calculateOverallScore(formData);
+            const preview = {
+                projectNumber: formData.projectNumber || '',
+                fakultas: formData.fakultas || '',
+                lokasi: formData.lokasi || '',
+                tanggal: formData.tanggal || '',
+                surveyor: formData.surveyor || '',
+                surveyors: formData.surveyors || [],
+                status: formData.status || 'draf',
+                mergedInto: formData.mergedInto || null,
+                mergedFrom: formData.mergedFrom || null,
+                mergedFromNumbers: formData.mergedFromNumbers || null,
+                score: score,
+                counts: {
+                    apar: (formData.aparUnits||[]).length,
+                    fa: (formData.fireAlarmUnits||[]).length,
+                    je: (formData.jalurEvakuasiUnits||[]).length,
+                    pd: (formData.pintuDaruratUnits||[]).length,
+                    td: (formData.tanggaDaruratUnits||[]).length
+                },
+                updatedAt: formData.updatedAt,
+                createdAt: formData.createdAt || formData.updatedAt
+            };
+            await db.collection('reports_preview').doc(targetDocId).set(preview, { merge: true });
+            // bersihkan LS cache biar next loadRiwayat pakai data baru
+            try { localStorage.removeItem('riwayat_cache_v2'); } catch {}
+        } catch (e) { console.warn('preview write gagal', e.message); }
         
         if (!silent) hideLoadingModal();
         else isAutoSaving = false;

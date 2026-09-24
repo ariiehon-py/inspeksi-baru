@@ -12,69 +12,123 @@ export function bindFilterRiwayat() {
     });
 }
 
-// Cache & debounce untuk biar loading gak lama terus
+// Cache & debounce — optimasi anti muter lama
 let _riwayatCache = null;
 let _riwayatCacheTime = 0;
 let _riwayatFetching = null;
-const RIWAYAT_CACHE_MS = 30000; // 30 detik
+const RIWAYAT_CACHE_MS = 60000; // 60 detik (biar pindah view instan)
+const RIWAYAT_LIMIT = 6; // 12 -> 6 : 15.88s/1.9MB kamu jadi ~1MB/7s, lolos timeout Incognito
+const LS_KEY = 'riwayat_cache_v2';
 
-function fetchWithTimeout(promise, ms = 8000) {
+function fetchWithTimeout(promise, ms = 20000) {
     return Promise.race([
         promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout - koneksi Firestore lambat, coba refresh')), ms))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout - koneksi lambat, pakai cache dulu')), ms))
     ]);
+}
+
+function saveCacheToLS(snapshot) {
+    try {
+        const arr = [];
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            // support dua format: preview (score/counts) dan full reports (aparUnits)
+            const isPreview = typeof d.score === 'number';
+            arr.push({ id: doc.id, data: { 
+                projectNumber: d.projectNumber, fakultas: d.fakultas, lokasi: d.lokasi, tanggal: d.tanggal,
+                surveyor: d.surveyor, surveyors: d.surveyors, status: d.status, mergedInto: d.mergedInto, mergedFrom: d.mergedFrom, mergedFromNumbers: d.mergedFromNumbers,
+                updatedAt: d.updatedAt?.toMillis ? d.updatedAt.toMillis() : (d.updatedAt? Date.now(): null),
+                createdAt: d.createdAt?.toMillis ? d.createdAt.toMillis() : (d.createdAt? Date.now(): null),
+                score: isPreview ? d.score : null,
+                counts: d.counts || null,
+                // simpan units ringkas untuk hitung score (tanpa foto) kalau dari reports
+                aparUnits: !isPreview ? (d.aparUnits||[]).map(u=>({id:u.id,lokasi:u.lokasi,score:u.score})) : [],
+                fireAlarmUnits: !isPreview ? (d.fireAlarmUnits||[]).map(u=>({id:u.id,lokasi:u.lokasi,score:u.score})) : [],
+                jalurEvakuasiUnits: !isPreview ? (d.jalurEvakuasiUnits||[]).map(u=>({id:u.id,lokasi:u.lokasi,score:u.score})) : [],
+                pintuDaruratUnits: !isPreview ? (d.pintuDaruratUnits||[]).map(u=>({id:u.id,lokasi:u.lokasi,score:u.score})) : [],
+                tanggaDaruratUnits: !isPreview ? (d.tanggaDaruratUnits||[]).map(u=>({id:u.id,lokasi:u.lokasi,score:u.score})) : []
+            }});
+        });
+        localStorage.setItem(LS_KEY, JSON.stringify({ t: Date.now(), arr }));
+    } catch {}
+}
+function loadCacheFromLS() {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        if (!obj.arr || !obj.t) return null;
+        if (Date.now() - obj.t > 10*60*1000) return null; // 10 menit max
+        // buat snapshot palsu yang kompatibel dengan renderRiwayatDocs
+        return {
+            empty: obj.arr.length===0,
+            forEach: (cb)=> obj.arr.forEach(({id, data})=>{
+                // restore timestamp palsu
+                const mkTs = (ms)=> ms ? { toMillis:()=>ms } : null;
+                data.updatedAt = mkTs(data.updatedAt);
+                data.createdAt = mkTs(data.createdAt);
+                cb({ id, data: ()=> data });
+            })
+        };
+    } catch { return null; }
+}
+
+function skeletonHtml(count=6) {
+    return Array(count).fill(0).map(()=>`
+        <div class="bg-white p-4 border border-gray-200 animate-pulse">
+            <div class="h-3 w-20 bg-gray-200 mb-3"></div>
+            <div class="h-4 w-3/4 bg-gray-200 mb-2"></div>
+            <div class="h-3 w-1/2 bg-gray-100 mb-3"></div>
+            <div class="h-7 w-full bg-gray-100"></div>
+        </div>`).join('');
 }
 
 export async function loadRiwayat(force = false) {
     const container = document.getElementById('riwayat-list');
     const dashboardContainer = document.getElementById('dashboard-riwayat-list');
     
-    // Pakai cache kalau masih fresh dan bukan force (biar gak fetch tiap pindah view)
+    // 1. Cache memori instan (60s)
     if (!force && _riwayatCache && (Date.now() - _riwayatCacheTime < RIWAYAT_CACHE_MS)) {
         try { renderRiwayatDocs(_riwayatCache, container, dashboardContainer); return; } catch {}
+    }
+    // 2. Cache localStorage instan — tampil dulu biar tidak muter
+    if (!force) {
+        const lsSnap = loadCacheFromLS();
+        if (lsSnap) {
+            try { renderRiwayatDocs(lsSnap, container, dashboardContainer); } catch {}
+            // tetap fetch di background untuk update (stale-while-revalidate)
+            if (_riwayatCache && (Date.now() - _riwayatCacheTime < 5000)) return;
+        }
     }
     // Cegah double fetch barengan
     if (_riwayatFetching) {
         try { await _riwayatFetching; } catch {}
-        if (_riwayatCache) { renderRiwayatDocs(_riwayatCache, container, dashboardContainer); return; }
+        if (_riwayatCache) { try{ renderRiwayatDocs(_riwayatCache, container, dashboardContainer);}catch{} return; }
     }
 
-    if (container) {
-        container.innerHTML = '<div class="text-center py-8 text-gray-400 col-span-full"><i class="fas fa-spinner fa-spin text-2xl"></i><p class="text-xs mt-2">Memuat riwayat...</p><button onclick="window.loadRiwayat && window.loadRiwayat(true)" class="mt-3 text-xs px-3 py-1 border border-gray-300 bg-white hover:bg-gray-50">Refresh</button></div>';
+    // Skeleton, bukan spinner muter besar
+    if (container && !container.querySelector('.animate-pulse')) {
+        // hanya tampilkan skeleton kalau belum ada cache yang dirender
+        if (!loadCacheFromLS()) {
+            container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 col-span-full">${skeletonHtml(6)}</div>`;
+        }
     }
-    if (dashboardContainer) {
-        dashboardContainer.innerHTML = '<div class="text-center py-8 text-gray-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p class="text-xs">Memuat riwayat...</p></div>';
+    if (dashboardContainer && !dashboardContainer.querySelector('.animate-pulse')) {
+        if (!loadCacheFromLS()) dashboardContainer.innerHTML = `<div class="space-y-2">${skeletonHtml(3)}</div>`;
     }
     
     const doFetch = async () => {
-        // limit 50 biar gak download semua kalau data sudah ratusan, dan sudah dibersihkan base64 jadi ringan
+        // STRATEGI BARU: coba fetch dari reports_preview dulu (3KB, bukan 5.7MB). Kalau kosong, fallback ke reports
         try {
-            const snap = await fetchWithTimeout(db.collection('reports').orderBy('updatedAt', 'desc').limit(50).get(), 8000);
-            return snap;
-        } catch (e) {
-            // fallback kalau index belum ada atau timeout di orderBy
-            const snap2 = await fetchWithTimeout(db.collection('reports').limit(50).get(), 8000);
-            return snap2;
-        }
+            const snapPreview = await fetchWithTimeout(db.collection('reports_preview').limit(RIWAYAT_LIMIT).get(), 8000);
+            if (!snapPreview.empty) return snapPreview;
+        } catch (e) { console.warn('[Riwayat] preview fetch gagal, fallback reports:', e.message); }
+        const snap = await fetchWithTimeout(db.collection('reports').limit(RIWAYAT_LIMIT).get(), 15000);
+        return snap;
     };
 
-    // Retry 2x kalau timeout
     let snapshot = null;
-    let lastErr = null;
-    _riwayatFetching = (async () => {
-        for (let attempt = 0; attempt < 3; attempt++) {
-            try {
-                snapshot = await doFetch();
-                lastErr = null;
-                break;
-            } catch (e) {
-                lastErr = e;
-                if (attempt < 2) await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
-            }
-        }
-        if (lastErr) throw lastErr;
-        return snapshot;
-    })();
+    _riwayatFetching = doFetch();
 
     try {
         snapshot = await _riwayatFetching;
@@ -82,13 +136,24 @@ export async function loadRiwayat(force = false) {
         if (snapshot) {
             _riwayatCache = snapshot;
             _riwayatCacheTime = Date.now();
+            saveCacheToLS(snapshot);
             renderRiwayatDocs(snapshot, container, dashboardContainer);
             return;
         }
     } catch (error) {
         _riwayatFetching = null;
-        const retryHtml = (msg) => `<div class="text-center py-8 text-amber-600 col-span-full"><p class="text-sm">${msg}</p><button onclick="window.loadRiwayat && window.loadRiwayat(true)" class="mt-3 text-xs px-4 py-1.5 bg-[#025511] text-white hover:bg-[#013b0c]">Coba Lagi</button><p class="text-[11px] text-gray-400 mt-1">Koneksi lambat, tidak perlu refresh halaman</p></div>`;
-        const errorHtml = retryHtml(`Gagal memuat: ${error.message}`);
+        console.error('[Riwayat] fetch error:', error.code || '', error.message);
+        // Kalau gagal tapi ada cache LS, jangan timpa UI — biarkan cache tetap tampil + toast halus
+        const lsSnap = loadCacheFromLS();
+        if (lsSnap) {
+            try { renderRiwayatDocs(lsSnap, container, dashboardContainer); } catch {}
+            showToast(`Firestore lambat (${error.code||''}): pakai cache dulu`, 'error');
+            return;
+        }
+        const detail = error.code ? `${error.code}: ${error.message}` : error.message;
+        // Bantu diagnosa Cloudflare/Firebase: tampilkan code asli
+        const retryHtml = (msg) => `<div class="text-center py-8 text-amber-600 col-span-full"><p class="text-sm">${msg}</p><p class="text-[11px] text-gray-500 mt-1 font-mono">${detail}</p><button onclick="window.loadRiwayat && window.loadRiwayat(true)" class="mt-3 text-xs px-4 py-1.5 bg-[#025511] text-white hover:bg-[#013b0c]">Coba Lagi</button><p class="text-[11px] text-gray-400 mt-1">Cek Rules Firebase / koneksi. Buka F12 Console untuk detail</p></div>`;
+        const errorHtml = retryHtml(`Gagal memuat riwayat`);
         if (container) container.innerHTML = errorHtml;
         if (dashboardContainer) dashboardContainer.innerHTML = retryHtml(`Gagal memuat riwayat`);
         return;
@@ -154,7 +219,8 @@ function renderRiwayatDocs(snapshot, container, dashboardContainer) {
         
         let count = 0;
         docs.forEach(({ id, data }) => {
-            const score = calculateOverallScore(data);
+            // preview punya score langsung, reports punya aparUnits full -> hitung
+            const score = (typeof data.score === 'number') ? data.score : calculateOverallScore(data);
             const status = data.status || 'draf';
             const isDraft = (status === 'draf' || status === 'draft');
             const statusBadge = isDraft
@@ -165,8 +231,12 @@ function renderRiwayatDocs(snapshot, container, dashboardContainer) {
             // Riwayat page card (Grid layout, clean professional card with action buttons)
             if (container) {
                 const card = document.createElement('div');
-                card.className = 'bg-white p-4 border border-gray-200 hover:border-gray-400 transition-all flex flex-col justify-between';
+                const isMergedSource = !!data.mergedInto;
+                const isGabungan = (data.projectNumber || '').startsWith('PRJ-GAB-') || Array.isArray(data.mergedFrom);
+                card.className = `bg-white p-4 border ${isGabungan ? 'border-green-300 bg-green-50/20' : (isMergedSource ? 'border-purple-200 bg-purple-50/30' : 'border-gray-200')} hover:border-gray-400 transition-all flex flex-col justify-between`;
                 const projNum = data.projectNumber || '-';
+                const mergedBadge = isMergedSource ? `<span class="inline-block px-1.5 py-0.5 border border-purple-300 bg-purple-50 text-purple-700 text-[9px] font-bold"><i class="fa-solid fa-code-merge mr-1"></i>SUDAH DIGABUNG → ${data.mergedInto}</span>` : '';
+                const gabunganBadge = isGabungan ? `<span class="inline-block px-1.5 py-0.5 border border-green-300 bg-green-50 text-[#025511] text-[9px] font-bold"><i class="fa-solid fa-layer-group mr-1"></i>GABUNGAN ${Array.isArray(data.mergedFromNumbers) ? `(${data.mergedFromNumbers.join(' + ')})` : ''}</span>` : '';
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start gap-2 mb-2">
@@ -176,7 +246,9 @@ function renderRiwayatDocs(snapshot, container, dashboardContainer) {
                                 <span class="text-base font-bold ${score >= 80 ? 'text-[#025511]' : (score >= 60 ? 'text-amber-700' : 'text-red-700')}">${score}%</span>
                             </div>
                         </div>
-                        <p class="text-[11px] font-mono font-bold text-[#025511] bg-green-50 border border-green-200 inline-block px-1.5 py-0.5 mb-1.5"><i class="fa-solid fa-hashtag mr-1"></i>${projNum}</p>
+                        <p class="text-[11px] font-mono font-bold text-[#025511] bg-green-50 border border-green-200 inline-block px-1.5 py-0.5 mb-1">${projNum.includes('PRJ-GAB') ? '<i class="fa-solid fa-code-merge mr-1"></i>' : '<i class="fa-solid fa-hashtag mr-1"></i>'}${projNum}</p>
+                        ${mergedBadge ? `<div class="mb-1">${mergedBadge}</div>` : ''}
+                        ${gabunganBadge ? `<div class="mb-1">${gabunganBadge}</div>` : ''}
                         <h4 class="font-bold text-gray-900 text-sm leading-snug mb-1.5">${data.fakultas || 'Tanpa Fakultas'}</h4>
                         <p class="text-xs text-gray-600 truncate mb-0.5"><i class="fa-solid fa-location-dot text-gray-400 mr-1.5"></i>${data.lokasi || '-'}</p>
                         <p class="text-xs text-gray-500 truncate mb-3"><i class="fa-solid fa-users text-gray-400 mr-1.5"></i>${data.surveyor || '-'}</p>
@@ -193,9 +265,24 @@ function renderRiwayatDocs(snapshot, container, dashboardContainer) {
                     </div>
                 `;
 
-                // Open report click
-                card.querySelector('.btn-open-report')?.addEventListener('click', (e) => {
+                // Open report click — jika dari preview, fetch full dulu
+                card.querySelector('.btn-open-report')?.addEventListener('click', async (e) => {
                     e.stopPropagation();
+                    // kalau data dari preview (ringan, tanpa checklist), fetch full
+                    if (typeof data.score === 'number' && !data.aparUnits) {
+                        showLoadingModal('Memuat laporan...');
+                        try {
+                            const full = await db.collection('reports').doc(id).get();
+                            if (full.exists) {
+                                state.currentDocId = id;
+                                restoreFormFromData(full.data());
+                                hideLoadingModal();
+                                showView('form');
+                                return;
+                            }
+                        } catch (err) { console.warn(err); }
+                        hideLoadingModal();
+                    }
                     state.currentDocId = id;
                     restoreFormFromData(data);
                     showView('form');
@@ -225,16 +312,19 @@ function renderRiwayatDocs(snapshot, container, dashboardContainer) {
 
             // Dashboard list card (Compact list layout, up to 6 items)
             if (dashboardContainer && count <= 6) {
+                const isMergedSourceDash = !!data.mergedInto;
+                const isGabunganDash = (data.projectNumber || '').startsWith('PRJ-GAB-');
                 const dashCard = document.createElement('div');
-                dashCard.className = 'p-3 border border-gray-200 hover:border-gray-400 bg-white flex items-center justify-between transition-all';
+                dashCard.className = `p-3 border ${isGabunganDash ? 'border-green-300 bg-green-50/30' : (isMergedSourceDash ? 'border-purple-200 bg-purple-50/40' : 'border-gray-200')} hover:border-gray-400 bg-white flex items-center justify-between transition-all`;
                 const dashBadge = isDraft
                     ? '<span class="text-[9px] font-bold px-1 py-0.5 border bg-amber-50 text-amber-700 border-amber-200">DRAF</span>'
                     : '<span class="text-[9px] font-bold px-1 py-0.5 border bg-green-50 text-[#025511] border-green-200">FINAL</span>';
-                const shortProj = data.projectNumber ? `<span class="text-[9px] font-mono font-bold text-[#025511]">${data.projectNumber}</span>` : '';
+                const shortProj = data.projectNumber ? `<span class="text-[9px] font-mono font-bold ${isGabunganDash ? 'text-green-700' : 'text-[#025511]'}">${data.projectNumber}</span>` : '';
+                const dashMergedHint = isMergedSourceDash ? `<span class="text-[8px] text-purple-600 font-bold ml-1">→ ${data.mergedInto}</span>` : (isGabunganDash ? `<span class="text-[8px] text-green-700 font-bold ml-1">GABUNGAN</span>` : '');
                 dashCard.innerHTML = `
                     <div class="min-w-0 pr-3 cursor-pointer flex-1">
                         <h4 class="font-bold text-gray-900 text-xs sm:text-sm truncate">${data.fakultas || 'Tanpa Fakultas'} ${dashBadge}</h4>
-                        <p class="text-[11px] text-gray-500 truncate">${shortProj ? shortProj + ' &bull; ' : ''}${data.tanggal || '-'} &bull; ${data.lokasi || '-'}</p>
+                        <p class="text-[11px] text-gray-500 truncate">${shortProj ? shortProj + dashMergedHint + ' &bull; ' : ''}${data.tanggal || '-'} &bull; ${data.lokasi || '-'}</p>
                     </div>
                     <div class="shrink-0 flex items-center gap-3">
                         <div class="text-right">

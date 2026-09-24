@@ -534,6 +534,9 @@
             <option value="Perpustakaan Pusat">Perpustakaan Pusat</option>
             <option value="Unit Lainnya">Unit Lainnya</option>
           </select>
+          <button id="btn-open-merge" class="btn btn-secondary text-xs py-1.5 px-3 border-[#025511] text-[#025511] hover:bg-green-50">
+            <i class="fa-solid fa-code-merge"></i> Gabung Project
+          </button>
           <button id="btn-download-rekap" class="btn btn-secondary text-xs py-1.5 px-3">
             <i class="fa-solid fa-file-pdf text-red-600"></i> Download Rekap
           </button>
@@ -619,6 +622,33 @@
     </div>
   </div>
 
+  <!-- MODAL: Gabung 2 Project -->
+  <div id="modal-merge" class="hidden fixed inset-0 z-[9999] bg-gray-900 bg-opacity-60 flex items-center justify-center p-4" style="display:none">
+    <div class="bg-white w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-gray-200">
+      <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+        <div>
+          <h3 class="text-sm font-bold text-gray-900"><i class="fa-solid fa-code-merge text-[#025511] mr-2"></i>Gabung Project Jadi 1</h3>
+          <p class="text-[11px] text-gray-500 mt-0.5">Pilih minimal 2 project (tanpa batas) — akan buat <span class="font-mono font-bold text-[#025511]">PRJ-GAB-XXXX</span> baru. Project lama tetap ada &amp; ditandai.</p>
+        </div>
+        <button id="btn-close-merge" class="text-gray-500 hover:text-red-600 px-2 py-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      <div class="px-4 py-2 bg-amber-50 border-b border-amber-200 flex items-center justify-between">
+        <span id="merge-selected-count" class="text-xs font-bold text-amber-800">0 dipilih (min 2)</span>
+        <span id="merge-hint" class="text-[11px] text-gray-600">Pilih minimal 2 project, tanpa batas maksimal.</span>
+      </div>
+      <div id="merge-choices-list" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50">
+        <!-- JS populates -->
+      </div>
+      <div class="p-3 border-t border-gray-200 flex justify-between items-center bg-white">
+        <p class="text-[11px] text-gray-400 max-w-[60%] leading-snug">Non-destruktif: project lama tidak dihapus, hanya ditambah badge <span class="font-bold text-purple-700">SUDAH DIGABUNG → PRJ-GAB-XXXX</span>.</p>
+        <div class="flex gap-2">
+          <button id="btn-cancel-merge" class="btn btn-secondary text-xs py-2 px-4">Batal</button>
+          <button id="btn-confirm-merge" class="btn btn-primary text-xs py-2 px-5 opacity-40 cursor-not-allowed" disabled><i class="fa-solid fa-code-merge mr-1"></i> Gabung Jadi 1</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div id="toast-container" class="fixed top-4 right-4 z-[70] flex flex-col gap-3 pointer-events-auto"></div>
   <!-- Firebase Compat SDK -->
@@ -629,7 +659,7 @@
   <!-- html2pdf.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <!-- App JS (ES Module) -->
-  <script type="module" src="js/app.js?v=16"></script>
+  <!-- App JS (ES Module) — v17 bust Cloudflare cache -->
+  <script type="module" src="js/app.js?v=17"></script>
 </body>
 </html>
