@@ -175,6 +175,10 @@
             <span class="text-xs text-gray-500 hidden sm:inline">&bull; Klik tombol di bawah untuk langsung menuju bagian</span>
           </div>
           <div class="flex items-center gap-2">
+            <button type="button" id="btn-import-backup-form-top" class="btn btn-secondary text-xs py-1 px-2.5">
+              <i class="fa-solid fa-file-import text-gray-700"></i>
+              <span>Import Backup</span>
+            </button>
             <button type="button" id="btn-quick-download-pdf" class="btn btn-secondary text-xs py-1 px-2.5">
               <i class="fa-solid fa-file-pdf text-red-600"></i>
               <span>Download PDF</span>
@@ -487,7 +491,7 @@
             <p class="text-[11px] text-gray-400 mt-1.5 text-center leading-relaxed">
               * Jika terjadi kendala jaringan atau server saat menyimpan, unduh data cadangan ini agar hasil inspeksi Anda tetap aman tersimpan di perangkat.
             </p>
-            <input type="file" id="backup-file-input" accept=".inspeksi,.json,application/octet-stream,application/json" class="hidden">
+            <input type="file" id="backup-file-input" accept=".inspeksi,.inspeksi.json,.json,application/octet-stream,application/json" class="hidden">
           </div>
         </div>
 
@@ -660,6 +664,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- App JS (ES Module) — v17 bust Cloudflare cache -->
-  <script type="module" src="js/app.js?v=17"></script>
+  <script type="module" src="js/app.js?v=18"></script>
 </body>
 </html>

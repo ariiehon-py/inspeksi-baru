@@ -1,6 +1,7 @@
 // js/backup.js — Backup Export/Import (.inspeksi files)
 import { state } from './state.js';
 import { collectFormData, restoreFormFromData } from './form.js';
+import { isLegacyBackup, convertLegacyBackup } from './legacy.js';
 import { showToast } from './ui.js';
 
 export function bindBackupButtons() {
@@ -23,7 +24,7 @@ export function bindBackupButtons() {
         e.target.value = '';
     });
     // FIX: pastikan accept mencakup .inspeksi dan .json (file lama)
-    if (fileInput) fileInput.accept = '.inspeksi,.json,application/octet-stream,application/json';
+    if (fileInput) fileInput.accept = '.inspeksi,.inspeksi.json,.json,application/octet-stream,application/json';
 }
 
 export function exportBackup() {
@@ -82,10 +83,28 @@ export function importBackup(file) {
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
-            const data = JSON.parse(e.target.result);
+            let data = JSON.parse(e.target.result);
+
+            // Deteksi & konversi file backup lama (format datar v1: apar_1_item_0_status, aparCount, dst)
+            const isLegacy = isLegacyBackup(data);
+            if (isLegacy) {
+                data = convertLegacyBackup(data);
+            } else if (!Array.isArray(data.aparUnits)) {
+                showToast('File backup tidak dikenali formatnya.', 'error');
+                return;
+            }
+
+            if (!confirm('Impor file akan menimpa seluruh isian form saat ini. Lanjutkan?')) return;
+
             restoreFormFromData(data);
-            showToast('Data berhasil di-import!', 'success');
+            showToast(
+                isLegacy
+                    ? 'File backup lama berhasil dikonversi & diimpor!'
+                    : 'Data berhasil di-import!',
+                'success'
+            );
         } catch (err) {
+            console.error(err);
             showToast('File backup tidak valid: ' + err.message, 'error');
         }
     };
